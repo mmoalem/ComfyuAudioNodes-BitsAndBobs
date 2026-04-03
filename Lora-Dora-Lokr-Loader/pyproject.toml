@@ -1,0 +1,13 @@
+[project]
+name = "comfyui-acestep-universal-adapter-loader"
+version = "0.1.0"
+description = "Universal LoRA/DoRA/LoKr/LoHa adapter loader for ACE-Step and other ComfyUI models"
+requires-python = ">=3.9"
+
+[project.urls]
+Repository = "https://github.com/your-username/ComfyUI-ACEStep-Universal-Adapter-Loader"
+
+[tool.comfy]
+PublisherId = "your-username"
+DisplayName = "ACEStep Universal Adapter Loader"
+Icon = ""
