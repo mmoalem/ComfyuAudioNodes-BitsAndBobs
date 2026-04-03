@@ -14,6 +14,7 @@ A universal adapter loader for ACE-Step models.
 - Features per-layer category scaling (Self-Attention, Cross-Attention, FFN).
 - Advanced auto-strength balancing for Flux-based models.
 - Includes a "Simple" node variant for a streamlined UI.
+- *Based on the [DoRA Power LoRA Loader](https://github.com/xmarre/ComfyUI-DoRA-Dynamic-LoRA-Loader) by xmarre.*
 
 ### [Ace-Step_chord_injector](./Ace-Step_chord_injector)
 Tools for manipulating and injecting chord information into the ACE-Step generation pipeline.
@@ -22,6 +23,7 @@ Tools for manipulating and injecting chord information into the ACE-Step generat
 
 ### [preview_audio_multi_compare](./preview_audio_multi_compare)
 A utility node for side-by-side comparison of multiple audio generation outputs within the ComfyUI interface.
+- *Modified from components in the [ryanontheinside](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside) repository.*
 
 ## Installation
 1. Clone this repository into your ComfyUI `custom_nodes` folder:
@@ -30,3 +32,8 @@ A utility node for side-by-side comparison of multiple audio generation outputs 
    git clone https://github.com/mmoalem/ComfyuAudioNodes-BitsAndBobs.git
    ```
 2. Restart ComfyUI.
+
+## Credits
+Special thanks to the original authors whose work served as the foundation for these nodes:
+- **xmarre** ([DoRA Power LoRA Loader](https://github.com/xmarre/ComfyUI-DoRA-Dynamic-LoRA-Loader))
+- **ryanontheinside** ([RyanOnTheInside ComfyUI Nodes](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside))
