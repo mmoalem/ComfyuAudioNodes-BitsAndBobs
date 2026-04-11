@@ -25,6 +25,12 @@ Tools for manipulating and injecting chord information into the ACE-Step generat
 A utility node for side-by-side comparison of multiple audio generation outputs within the ComfyUI interface.
 - *Modified from components in the [ryanontheinside](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside) repository.*
 
+### [ace_step_gguf_loader](./ace_step_gguf_loader)
+A custom GGUF and PyTorch bypass loader specifically designed for running quantized ACE-Step models natively inside ComfyUI.
+- Supports ACE-Step 1.5 DiT `acestep` architectures missing from standard allowlists.
+- Re-maps the GGUF `qwen3` embedding namespace back into HuggingFace format for ComfyUI detection.
+- Includes a direct subclass wrapper for the `AudioOobleckVAE` architecture to fix cross-device dtype crashes and apply missing 48kHz to 44.1kHz resampling when used with ACE-Step 1.5.
+
 ## Installation
 1. Clone this repository into your ComfyUI `custom_nodes` folder:
    ```bash
