@@ -451,7 +451,7 @@ class ACEStepUniversalAdapterLoaderSimple(ACEStepUniversalAdapterLoader):
     RETURN_TYPES = ("MODEL",)
     RETURN_NAMES = ("model",)
     FUNCTION = "load_loras"
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Adapters"
 
     def load_loras(self, model, clip=None, **kwargs):
         # Delegate to the advanced node logic

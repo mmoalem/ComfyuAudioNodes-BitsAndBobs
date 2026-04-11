@@ -3325,7 +3325,7 @@ class ACEStepUniversalAdapterLoader:
     RETURN_TYPES = ("MODEL", "STRING", "STRING")
     RETURN_NAMES = ("MODEL", "auto_strength_report_json", "analysis_report")
     FUNCTION = "load_loras"
-    CATEGORY = "loaders"
+    CATEGORY = "ACE-Step/Adapters"
 
     def _load_one(
         self,
@@ -3875,7 +3875,7 @@ class ACEStepUniversalAdapterLoaderSimple(ACEStepUniversalAdapterLoader):
     RETURN_TYPES = ("MODEL",)
     RETURN_NAMES = ("model",)
     FUNCTION = "load_loras"
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Adapters"
 
     def load_loras(self, model, clip=None, **kwargs):
         # Delegate to the advanced node logic

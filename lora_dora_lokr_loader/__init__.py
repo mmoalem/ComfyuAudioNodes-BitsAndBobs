@@ -12,7 +12,7 @@ async def acestep_list_loras(request):
 
 
 # Tell ComfyUI to serve our frontend extension (inherits the upstream web/ dir).
-WEB_DIRECTORY = "./web"
+# WEB_DIRECTORY removed - now handled in root __init__.py
 
 NODE_CLASS_MAPPINGS = {
     "ACEStep Universal Adapter Loader": ACEStepUniversalAdapterLoader,

@@ -140,7 +140,7 @@ class AceStepDiTLoaderGGUF:
     RETURN_TYPES  = ("MODEL",)
     RETURN_NAMES  = ("model",)
     FUNCTION      = "load_dit"
-    CATEGORY      = "AceStep/GGUF Loaders"
+    CATEGORY      = "ACE-Step/GGUF Loaders"
     TITLE         = "AceStep DiT Loader (GGUF)"
 
     def load_dit(self, dit_name: str, dequant_dtype: str = "default"):
@@ -321,7 +321,7 @@ class AceStepDualCLIPLoaderGGUF:
     RETURN_TYPES  = ("CLIP",)
     RETURN_NAMES  = ("clip",)
     FUNCTION      = "load_dual_clip"
-    CATEGORY      = "AceStep/GGUF Loaders"
+    CATEGORY      = "ACE-Step/GGUF Loaders"
     TITLE         = "AceStep Dual CLIP Loader (GGUF)"
 
     def load_dual_clip(self, text_encoder: str, audio_lm: str):
@@ -389,7 +389,7 @@ class AceStepVAELoaderGGUF:
     RETURN_TYPES  = ("VAE",)
     RETURN_NAMES  = ("vae",)
     FUNCTION      = "load_vae"
-    CATEGORY      = "AceStep/GGUF Loaders"
+    CATEGORY      = "ACE-Step/GGUF Loaders"
     TITLE         = "AceStep VAE Loader (GGUF)"
 
     def load_vae(self, vae_name: str):
@@ -461,7 +461,7 @@ class AceStepModelLoaderGGUF:
     RETURN_TYPES  = ("MODEL", "CLIP", "VAE")
     RETURN_NAMES  = ("model", "clip", "vae")
     FUNCTION      = "load_all"
-    CATEGORY      = "AceStep/GGUF Loaders"
+    CATEGORY      = "ACE-Step/GGUF Loaders"
     TITLE         = "AceStep All-in-One Loader (GGUF)"
 
     def load_all(

@@ -40,7 +40,7 @@ class PreviewAudioMultiCompare:
     RETURN_TYPES = ()
     FUNCTION = "preview_compare"
     OUTPUT_NODE = True
-    CATEGORY = "audio"
+    CATEGORY = "ACE-Step/Audio"
     DESCRIPTION = (
         "Preview and compare up to 6 audio outputs side by side. "
         "Connect audio_1 through audio_6 and optionally set label names. "

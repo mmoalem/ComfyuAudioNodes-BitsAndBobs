@@ -47,7 +47,7 @@ class PreviewAudioMultiCompare:
     RETURN_TYPES = ()
     FUNCTION = "compare"
     OUTPUT_NODE = True
-    CATEGORY = "audio"
+    CATEGORY = "ACE-Step/Audio"
 
     def compare(self, **kwargs):
         # Return individual outputs expected by the JS file (e.g. a_audio, b_audio...)

@@ -493,7 +493,7 @@ class AceStepConditioningInspector:
     """
     ACE-Step ▸ Conditioning Inspector — passthrough that prints the dict.
     """
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Chords"
     FUNCTION = "inspect"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("conditioning",)
@@ -574,7 +574,7 @@ class AceStepChordConditioner:
 
     Set generate_audio_codes = FALSE in TextEncodeAceStepAudio1.5.
     """
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Chords"
     FUNCTION = "generate"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("conditioning",)
@@ -678,7 +678,7 @@ class AceStepChordPreview:
     Renders the section-aware chord audio so you can hear exactly what
     harmonic structure is being injected before committing to a full generation.
     """
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Chords"
     FUNCTION = "preview"
     RETURN_TYPES = ("AUDIO",)
     RETURN_NAMES = ("chord_audio",)
@@ -720,7 +720,7 @@ class AceStepSourceReader:
     Run once to print the source — paste output so we can understand the
     direct 25Hz latent injection path.
     """
-    CATEGORY = "ACE-Step"
+    CATEGORY = "ACE-Step/Chords"
     FUNCTION = "read"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("conditioning",)
