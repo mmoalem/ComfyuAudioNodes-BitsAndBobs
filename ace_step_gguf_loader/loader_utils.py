@@ -43,7 +43,7 @@ def _import_from_gguf(submod_name: str):
 
     # 2) Load via importlib from the sibling folder
     import os
-    gguf_dir = os.path.join(os.path.dirname(__file__), "..", "ComfyUI-GGUF")
+    gguf_dir = os.path.join(os.path.dirname(__file__), "..", "..", "ComfyUI-GGUF")
     submod_path = os.path.join(gguf_dir, f"{submod_name}.py")
     if not os.path.isfile(submod_path):
         raise ImportError(f"Cannot find ComfyUI-GGUF/{submod_name}.py at {submod_path}")
