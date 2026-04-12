@@ -32,12 +32,31 @@ A custom GGUF and PyTorch bypass loader specifically designed for running quanti
 - Includes a direct subclass wrapper for the `AudioOobleckVAE` architecture to fix cross-device dtype crashes and apply missing 48kHz to 44.1kHz resampling when used with ACE-Step 1.5.
 
 ## Installation
+
+### Method 1: ComfyUI-Manager (Recommended)
+1. Search for `ComfyuAudioNodes-BitsAndBobs` in the ComfyUI-Manager.
+2. Click **Install**.
+3. **Important:** You must also install `ComfyUI-GGUF` from the manager for the GGUF loader to function.
+
+### Method 2: Manual Installation
 1. Clone this repository into your ComfyUI `custom_nodes` folder:
    ```bash
    cd ComfyUI/custom_nodes
    git clone https://github.com/mmoalem/ComfyuAudioNodes-BitsAndBobs.git
    ```
-2. Restart ComfyUI.
+2. Install the required Python dependencies. If you are using the **ComfyUI Portable** version, run this from your ComfyUI root folder:
+   ```bash
+   .\python_embeded\python.exe -m pip install -r .\custom_nodes\ComfyuAudioNodes-BitsAndBobs\requirements.txt
+   ```
+   For standard Python installs:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Mandatory Dependency:** The GGUF loader requires the `ComfyUI-GGUF` nodes to be present in your `custom_nodes` folder:
+   ```bash
+   git clone https://github.com/city96/ComfyUI-GGUF
+   ```
+4. Restart ComfyUI.
 
 ## Credits
 Special thanks to the original authors whose work served as the foundation for these nodes:

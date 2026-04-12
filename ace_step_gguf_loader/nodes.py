@@ -27,6 +27,7 @@ import comfy.model_patcher
 from .loader_utils import (
     load_dit_gguf, load_text_encoder_gguf, load_lm_gguf, load_vae_gguf,
     is_oobleck_vae_gguf, load_oobleck_vae_from_gguf,
+    GGUF_AVAILABLE
 )
 
 # ---------------------------------------------------------------------------
@@ -38,19 +39,36 @@ import sys as _sys
 
 def _get_gguf_mod(submod_name: str):
     """Return a module from the ComfyUI-GGUF package."""
+    if not GGUF_AVAILABLE:
+        return None
     full_key = f"ComfyUI-GGUF.{submod_name}"
     if full_key in _sys.modules:
         return _sys.modules[full_key]
     from .loader_utils import _import_from_gguf
     return _import_from_gguf(submod_name)
 
-_gguf_ops_mod   = _get_gguf_mod("ops")
-_gguf_nodes_mod = _get_gguf_mod("nodes")
-_gguf_dequant   = _get_gguf_mod("dequant")
+if GGUF_AVAILABLE:
+    _gguf_ops_mod   = _get_gguf_mod("ops")
+    _gguf_nodes_mod = _get_gguf_mod("nodes")
+    _gguf_dequant   = _get_gguf_mod("dequant")
 
-GGMLOps          = _gguf_ops_mod.GGMLOps
-GGUFModelPatcher = _gguf_nodes_mod.GGUFModelPatcher
-is_quantized     = _gguf_dequant.is_quantized
+    GGMLOps          = _gguf_ops_mod.GGMLOps
+    GGUFModelPatcher = _gguf_nodes_mod.GGUFModelPatcher
+    is_quantized     = _gguf_dequant.is_quantized
+else:
+    GGMLOps          = None
+    GGUFModelPatcher = None
+    is_quantized     = None
+
+
+def _check_gguf():
+    if not GGUF_AVAILABLE:
+        raise ImportError(
+            "\n\n[ACEStep GGUF Loader] ERROR: 'ComfyUI-GGUF' custom node not found.\n"
+            "This node is required to load and dequantize GGUF models.\n\n"
+            "Please install it from: https://github.com/city96/ComfyUI-GGUF\n"
+            "or via ComfyUI-Manager (search for 'GGUF').\n"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -144,6 +162,7 @@ class AceStepDiTLoaderGGUF:
     TITLE         = "AceStep DiT Loader (GGUF)"
 
     def load_dit(self, dit_name: str, dequant_dtype: str = "default"):
+        _check_gguf()
         path = _resolve_path(dit_name, "acestep_dit_gguf", "unet_gguf", "diffusion_models", "unet")
 
         ops = GGMLOps()
@@ -325,6 +344,7 @@ class AceStepDualCLIPLoaderGGUF:
     TITLE         = "AceStep Dual CLIP Loader (GGUF)"
 
     def load_dual_clip(self, text_encoder: str, audio_lm: str):
+        _check_gguf()
         # Resolve paths
         enc_path = _resolve_path(text_encoder, "acestep_enc_gguf", "text_encoders", "clip")
         lm_path  = _resolve_path(audio_lm,     "acestep_lm_gguf",  "text_encoders", "clip")
@@ -393,6 +413,7 @@ class AceStepVAELoaderGGUF:
     TITLE         = "AceStep VAE Loader (GGUF)"
 
     def load_vae(self, vae_name: str):
+        _check_gguf()
         path = _resolve_path(vae_name, "acestep_vae_gguf", "vae")
         sd   = load_vae_gguf(path)
         if is_oobleck_vae_gguf(sd):

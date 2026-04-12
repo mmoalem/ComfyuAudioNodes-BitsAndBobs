@@ -72,12 +72,20 @@ def _import_from_gguf(submod_name: str):
     spec.loader.exec_module(mod)
     return mod
 
-_gguf_ops    = _import_from_gguf("ops")
-_gguf_dequant = _import_from_gguf("dequant")
+try:
+    _gguf_ops    = _import_from_gguf("ops")
+    _gguf_dequant = _import_from_gguf("dequant")
 
-GGMLTensor       = _gguf_ops.GGMLTensor
-is_quantized     = _gguf_dequant.is_quantized
-dequantize_tensor = _gguf_dequant.dequantize_tensor
+    GGMLTensor       = _gguf_ops.GGMLTensor
+    is_quantized     = _gguf_dequant.is_quantized
+    dequantize_tensor = _gguf_dequant.dequantize_tensor
+    GGUF_AVAILABLE = True
+except Exception as e:
+    logging.warning(f"ACEStep GGUF Loader: ComfyUI-GGUF not found. GGUF loading will be disabled. Error: {e}")
+    GGMLTensor = None
+    is_quantized = None
+    dequantize_tensor = None
+    GGUF_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # Known ACE-Step architecture strings
