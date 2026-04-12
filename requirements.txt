@@ -1,0 +1,6 @@
+av
+numpy
+torch
+gguf
+safetensors
+aiohttp
