@@ -1,0 +1,662 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "revision": 0,
+  "last_node_id": 441,
+  "last_link_id": 31,
+  "nodes": [
+    {
+      "id": "204:47",
+      "type": "ConditioningZeroOut",
+      "pos": [
+        966.9879062500003,
+        618.2736081237794
+      ],
+      "size": [
+        204.134765625,
+        26
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            21
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "ConditioningZeroOut",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 319,
+      "type": "KSampler",
+      "pos": [
+        1260,
+        450
+      ],
+      "size": [
+        270,
+        262
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 19
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 20
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 21
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            15
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "KSampler",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        0,
+        "randomize",
+        65,
+        1,
+        "dpmpp_3m_sde_gpu",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": "204:118",
+      "type": "EmptyAceStep1.5LatentAudio",
+      "pos": [
+        1110,
+        870
+      ],
+      "size": [
+        314.90390625,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            22
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "EmptyAceStep1.5LatentAudio",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        180,
+        1
+      ]
+    },
+    {
+      "id": 388,
+      "type": "ModelSamplingAuraFlow",
+      "pos": [
+        930,
+        120
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "ModelSamplingAuraFlow",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        1
+      ]
+    },
+    {
+      "id": 314,
+      "type": "VAEDecodeAudio",
+      "pos": [
+        1290,
+        120
+      ],
+      "size": [
+        164.2388671875,
+        46
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 15
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 29
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            24
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "VAEDecodeAudio",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": []
+    },
+    {
+      "id": "204:94",
+      "type": "TextEncodeAceStepAudio1.5",
+      "pos": [
+        510,
+        600
+      ],
+      "size": [
+        400,
+        454
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            20,
+            26
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "TextEncodeAceStepAudio1.5",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "A contemporary R&B-pop ballad that blends soulful, warm male vocals with crisp finger snaps and beatboxing that lay a tight percussive foundation. live.",
+        "[Verse]\nStreetlights dim, shadows long, another night's begun\nGotta stay sharp, can't be soft, till the morning sun\nEvery corner got eyes, every whisper carries weight\nOne false move, you learn fast, seals your bitter fate\nConcrete jungle, where the weak get ate alive\nSurvival's the only prayer, watch how the strong thrive\nLoyalty's a word they throw around, then stab your back\nNo hand out, no free pass, stay on your own track\n\n[Chorus]\nNo mercy in this hood, nah, not a single drop\nThe only rule is hustle hard, until your heartbeat stop\nYou fall, they walk right past, won't even look your way\nThis ain't no place for weakness, better learn to pray\n\n[Verse]\nSeen too many fall, chasing dreams they couldn't hold\nTried to play it fair, ended up out in the cold\nHeart gets hard, skin gets thick, just to weather every storm\nNo comfort here, just constant pressure, keeping you on form\nEvery dollar earned is a battle won, a war you fought\nEvery lesson learned is a scar that can't be bought\nTrust is a luxury, few can truly afford\nBetter guard your spirit, keep your actions on accord\n\n[Chorus]\nNo mercy in this hood, nah, not a single drop\nThe only rule is hustle hard, until your heartbeat stop\nYou fall, they walk right past, won't even look your way\nThis ain't no place for weakness, better learn to pray",
+        0,
+        "randomize",
+        80,
+        180,
+        "4",
+        "en",
+        "Eb major",
+        true,
+        15,
+        0.3,
+        0.8,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 418,
+      "type": "SaveAudio",
+      "pos": [
+        1560,
+        150
+      ],
+      "size": [
+        270,
+        112
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 24
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.18.1",
+        "Node name for S&R": "SaveAudio",
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": [
+        "audio/coreli"
+      ]
+    },
+    {
+      "id": 439,
+      "type": "ACEStep Universal Adapter Loader (Simple)",
+      "pos": [
+        510,
+        150
+      ],
+      "size": [
+        360,
+        334
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 31
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "mmoalem/ComfyuAudioNodes-BitsAndBobs",
+        "ver": "a6a0ef1560ee788dcb1c8c40e71c51eae9c30ba5",
+        "Node name for S&R": "ACEStep Universal Adapter Loader (Simple)",
+        "dora_power_lora": {
+          "rows": [
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            },
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            },
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            }
+          ],
+          "globals": {
+            "stack_enabled": true,
+            "verbose": false,
+            "log_unloaded_keys": false,
+            "auto_strength_enabled": true,
+            "auto_strength_device": "gpu",
+            "auto_strength_ratio_floor": 0.3,
+            "auto_strength_ratio_ceiling": 1.5,
+            "dora_fp32_normalization": true,
+            "dora_slice_fix": true,
+            "dora_adaln_swap_fix": true,
+            "zimage_lumina2_compat": false,
+            "layer_scale_enabled": true,
+            "self_attn_scale": 1,
+            "cross_attn_scale": 1,
+            "ffn_scale": 1,
+            "other_scale": 1
+          }
+        },
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        }
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 441,
+      "type": "AceStepModelLoaderGGUF",
+      "pos": [
+        -150,
+        150
+      ],
+      "size": [
+        534.093503639915,
+        199.0909423828125
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "lora_stack",
+          "shape": 7,
+          "type": "ACESTEP_LORA",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            31
+          ]
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "links": [
+            30
+          ]
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "links": [
+            29
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {},
+          "version": "7.8"
+        },
+        "aux_id": "mmoalem/ComfyuAudioNodes-BitsAndBobs",
+        "ver": "a6a0ef1560ee788dcb1c8c40e71c51eae9c30ba5",
+        "Node name for S&R": "AceStepModelLoaderGGUF"
+      },
+      "widgets_values": [
+        "Ace-step\\GGUF\\acestep-v15-xl-sft-Q8_0.gguf",
+        "ace-step\\GGUF\\Qwen3-Embedding-0.6B-Q8_0.gguf",
+        "ace-step\\GGUF\\acestep-5Hz-lm-1.7B-Q8_0.gguf",
+        "ace-step\\GGUF\\vae-BF16.gguf",
+        "default"
+      ]
+    },
+    {
+      "id": 440,
+      "type": "Note",
+      "pos": [
+        0,
+        480
+      ],
+      "size": [
+        360.4135675048826,
+        315.5519999999999
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "version": "7.8",
+          "input_ue_unconnectable": {}
+        }
+      },
+      "widgets_values": [
+        "The first parameters I tweak to improve output:\n\nIn the Text Encoder CFG can range from 2 to 15 and it seems each model weight or LM weight might require different strength completly.\n\nAlso \"temperature\" can range between anywhere between 0.2 to 1. \n\nIn the ksampler steps (8 for turbo and 50-80 for SFT and Base) and CFG between 1 and 5 (1 is usually enough)\n\nOther parameters to look at are  top_p, top_k and the lora loader parameters.\n\nWorth playing with these parameters to get best output"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    }
+  ],
+  "links": [
+    [
+      15,
+      319,
+      0,
+      314,
+      0,
+      "LATENT"
+    ],
+    [
+      19,
+      388,
+      0,
+      319,
+      0,
+      "MODEL"
+    ],
+    [
+      20,
+      "204:94",
+      0,
+      319,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      21,
+      "204:47",
+      0,
+      319,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      22,
+      "204:118",
+      0,
+      319,
+      3,
+      "LATENT"
+    ],
+    [
+      23,
+      439,
+      0,
+      388,
+      0,
+      "MODEL"
+    ],
+    [
+      24,
+      314,
+      0,
+      418,
+      0,
+      "AUDIO"
+    ],
+    [
+      26,
+      "204:94",
+      0,
+      "204:47",
+      0,
+      "CONDITIONING"
+    ],
+    [
+      29,
+      441,
+      2,
+      314,
+      1,
+      "VAE"
+    ],
+    [
+      30,
+      441,
+      1,
+      "204:94",
+      0,
+      "CLIP"
+    ],
+    [
+      31,
+      441,
+      0,
+      439,
+      0,
+      "MODEL"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "Models",
+      "bounding": [
+        -150,
+        60,
+        570,
+        330
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "Audio Duration",
+      "bounding": [
+        1050,
+        780,
+        420,
+        210
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "Lora-Lokr-Dora-Loader",
+      "bounding": [
+        480,
+        60,
+        420,
+        480
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "ds": {
+      "scale": 1.2100000000000006,
+      "offset": [
+        501.0436346314261,
+        124.70672932170187
+      ]
+    },
+    "frontendVersion": "1.41.21",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
