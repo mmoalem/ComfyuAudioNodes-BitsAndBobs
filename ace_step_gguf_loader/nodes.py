@@ -190,11 +190,17 @@ class AceStepDiTLoaderGGUF:
         import comfy.model_management as _mm
 
         hidden_size    = meta.get("acestep-dit.embedding_length", 2048)
+        
+        # XL models sometimes carry default 2048 GGUF metadata. Pluck exact size from bias.
+        proj_in_bias_key = "decoder.proj_in.1.bias"
+        if proj_in_bias_key in sd:
+            hidden_size = int(sd[proj_in_bias_key].shape[0])
+
         num_dit_layers = meta.get("acestep-dit.block_count", 24)
-        num_heads      = meta.get("acestep-dit.attention.head_count", 16)
-        num_kv_heads   = meta.get("acestep-dit.attention.head_count_kv", 8)
-        head_dim       = meta.get("acestep-dit.attention.key_length", 128)
-        intermediate   = meta.get("acestep-dit.feed_forward_length", hidden_size * 3)
+        num_heads      = hidden_size // 128
+        num_kv_heads   = num_heads // 2
+        head_dim       = 128
+        intermediate   = hidden_size * 3
 
         # The XL turbo model has a patch size of 4, while the 1.5 base has 2!
         # Let's derive it directly from the tensor shape if possible, or assume 4 for XL.
