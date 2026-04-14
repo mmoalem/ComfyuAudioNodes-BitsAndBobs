@@ -197,10 +197,22 @@ class AceStepDiTLoaderGGUF:
             hidden_size = int(sd[proj_in_bias_key].shape[0])
 
         num_dit_layers = meta.get("acestep-dit.block_count", 24)
-        num_heads      = hidden_size // 128
-        num_kv_heads   = num_heads // 2
         head_dim       = 128
-        intermediate   = hidden_size * 3
+        
+        num_heads = hidden_size // head_dim
+        q_proj_key = "decoder.layers.0.self_attn.q_proj.weight"
+        if q_proj_key in sd:
+            num_heads = int(sd[q_proj_key].shape[0]) // head_dim
+            
+        num_kv_heads = num_heads // 2
+        k_proj_key = "decoder.layers.0.self_attn.k_proj.weight"
+        if k_proj_key in sd:
+            num_kv_heads = int(sd[k_proj_key].shape[0]) // head_dim
+            
+        intermediate = hidden_size * 3
+        mlp_gate_key = "decoder.layers.0.mlp.gate_proj.weight"
+        if mlp_gate_key in sd:
+            intermediate = int(sd[mlp_gate_key].shape[0])
 
         # The XL turbo model has a patch size of 4, while the 1.5 base has 2!
         # Let's derive it directly from the tensor shape if possible, or assume 4 for XL.
