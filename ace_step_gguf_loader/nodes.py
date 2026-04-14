@@ -219,7 +219,7 @@ class AceStepDiTLoaderGGUF:
         patch_size   = 2
         fsq_dim      = 2048
         # Check decoder.proj_in shape to accurately detect patch size
-        proj_in_key = "decoder.proj_in.1.weight"
+        proj_in_key = "decoder.proj_in.0.weight"
         if proj_in_key in sd:
             patch_size = list(sd[proj_in_key].shape)[-1]
         
