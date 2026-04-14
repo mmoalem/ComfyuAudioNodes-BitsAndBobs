@@ -197,6 +197,17 @@ class AceStepDiTLoaderGGUF:
             hidden_size = int(sd[proj_in_bias_key].shape[0])
 
         num_dit_layers = meta.get("acestep-dit.block_count", 24)
+        
+        # Determine actual depth dynamically (XL GGUFS often misreport 24 instead of 32)
+        import re
+        max_layer = -1
+        layer_pattern = re.compile(r"decoder\.layers\.(\d+)\.")
+        for k in sd.keys():
+            m = layer_pattern.search(k)
+            if m:
+                max_layer = max(max_layer, int(m.group(1)))
+        if max_layer >= 0:
+            num_dit_layers = max_layer + 1
         head_dim       = 128
         
         num_heads = hidden_size // head_dim
