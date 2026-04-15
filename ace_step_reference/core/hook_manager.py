@@ -1,0 +1,194 @@
+import torch
+import torch.nn as nn
+from typing import Dict, Optional
+from . import tensor_ops
+
+
+class HookManager:
+    """Manages dynamic monkey-patching of AceStepAttention.forward for true concatenative KV injection.
+    
+    Instead of interpolating self_attn output residuals, this intercepts K and V *after*
+    post-rotation embeddings (RoPE) are applied.
+    """
+
+    def __init__(self, raw_model: nn.Module, layer_range: tuple):
+        self.raw_model = raw_model
+        self.start_layer, self.end_layer = layer_range
+        self._patched_modules: list = []
+        self._layer_modules: list = []
+        self._build_layer_index()
+
+    def _build_layer_index(self) -> None:
+        if hasattr(self.raw_model, "decoder") and hasattr(self.raw_model.decoder, "layers"):
+            for idx, layer in enumerate(self.raw_model.decoder.layers):
+                if self.start_layer <= idx <= self.end_layer:
+                    if hasattr(layer, "self_attn"):
+                        self._layer_modules.append((idx, layer.self_attn))
+                    else:
+                        print(f"[HookManager] Warning: layer {idx} has no self_attn")
+        else:
+            print("[HookManager] Warning: raw_model has no decoder.layers — no hooks registered")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.remove_all()
+        return False
+
+    def remove_all(self) -> None:
+        for module in self._patched_modules:
+            if hasattr(module, "forward"): # Falls back to the class method
+                delattr(module, "forward")
+        self._patched_modules.clear()
+
+    # ------------------------------------------------------------------
+    # Capture & Inject — Dynamically binds replacement forward
+    # ------------------------------------------------------------------
+
+    def _make_forward_wrapper(self, layer_idx: int, cache: dict, strength: float, is_capture: bool, taper: str):
+        """Creates a bound monkey-patched forward function for AceStepAttention."""
+        
+        effective_strength = strength
+        if taper != "none" and not is_capture:
+            effective_strength = tensor_ops.compute_layer_strength(
+                layer_idx, self.start_layer, self.end_layer, strength, taper
+            )
+
+        def custom_forward(
+            self,
+            hidden_states,
+            encoder_hidden_states=None,
+            attention_mask=None,
+            position_embeddings=None,
+        ):
+            from comfy.ldm.ace.ace_step15 import apply_rotary_pos_emb
+            from comfy.ldm.modules.attention import optimized_attention
+            
+            bsz, q_len, _ = hidden_states.size()
+
+            query_states = self.q_proj(hidden_states)
+            query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim)
+            query_states = self.q_norm(query_states)
+            query_states = query_states.transpose(1, 2)
+
+            if self.is_cross_attention and encoder_hidden_states is not None:
+                bsz_enc, kv_len, _ = encoder_hidden_states.size()
+                key_states = self.k_proj(encoder_hidden_states)
+                value_states = self.v_proj(encoder_hidden_states)
+
+                key_states = key_states.view(bsz_enc, kv_len, self.num_kv_heads, self.head_dim)
+                key_states = self.k_norm(key_states)
+                value_states = value_states.view(bsz_enc, kv_len, self.num_kv_heads, self.head_dim)
+
+                key_states = key_states.transpose(1, 2)
+                value_states = value_states.transpose(1, 2)
+            else:
+                kv_len = q_len
+                key_states = self.k_proj(hidden_states)
+                value_states = self.v_proj(hidden_states)
+
+                key_states = key_states.view(bsz, q_len, self.num_kv_heads, self.head_dim)
+                key_states = self.k_norm(key_states)
+                value_states = value_states.view(bsz, q_len, self.num_kv_heads, self.head_dim)
+
+                key_states = key_states.transpose(1, 2)
+                value_states = value_states.transpose(1, 2)
+
+                if position_embeddings is not None:
+                    cos, sin = position_embeddings
+                    query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
+
+                # ==========================================================
+                # =================== HOOK INJECTION POINT =================
+                # ==========================================================
+                if is_capture:
+                    cache[layer_idx] = {
+                        "k": key_states.detach().cpu(),
+                        "v": value_states.detach().cpu(),
+                    }
+                else:
+                    ref_data = cache.get(layer_idx)
+                    if ref_data is not None and effective_strength > 0:
+                        ref_device = key_states.device
+                        ref_dtype = key_states.dtype
+                        
+                        ref_k = ref_data["k"].to(device=ref_device, dtype=ref_dtype)
+                        ref_v = ref_data["v"].to(device=ref_device, dtype=ref_dtype)
+                        
+                        # Expand B=1 reference cache to match generation CFG batch sizes
+                        if ref_k.shape[0] == 1 and bsz > 1:
+                            ref_k = ref_k.expand(bsz, -1, -1, -1)
+                            ref_v = ref_v.expand(bsz, -1, -1, -1)
+                        
+                        # Apply strength scaling prior to sequence concatenation
+                        ref_k = ref_k * effective_strength
+                        ref_v = ref_v * effective_strength
+                        
+                        # Concatenate sequence dimensions (dim=2 since format is [B, heads, seq, dim])
+                        key_states = torch.cat([key_states, ref_k], dim=2)
+                        value_states = torch.cat([value_states, ref_v], dim=2)
+                        
+                        kv_len = key_states.shape[2]
+                # ==========================================================
+
+            n_rep = self.num_heads // self.num_kv_heads
+            if n_rep > 1:
+                key_states = key_states.repeat_interleave(n_rep, dim=1)
+                value_states = value_states.repeat_interleave(n_rep, dim=1)
+
+            attn_bias = None
+            if self.sliding_window is not None and not self.is_cross_attention:
+                indices_q = torch.arange(q_len, device=query_states.device)
+                
+                if kv_len > q_len:
+                    # K sequence contains BOTH generation tokens and reference tokens
+                    indices_k_gen = torch.arange(q_len, device=query_states.device)
+                    indices_k_ref = torch.arange(kv_len - q_len, device=query_states.device)
+                    indices_k = torch.cat([indices_k_gen, indices_k_ref])
+                else:
+                    indices_k = torch.arange(kv_len, device=query_states.device)
+
+                diff = indices_q.unsqueeze(1) - indices_k.unsqueeze(0)
+                in_window = torch.abs(diff) <= self.sliding_window
+
+                window_bias = torch.zeros((q_len, kv_len), device=query_states.device, dtype=query_states.dtype)
+                min_value = torch.finfo(query_states.dtype).min
+                window_bias.masked_fill_(~in_window, min_value)
+
+                window_bias = window_bias.unsqueeze(0).unsqueeze(0)
+
+                if attn_bias is not None:
+                    if attn_bias.dtype == torch.bool:
+                        base_bias = torch.zeros_like(window_bias)
+                        base_bias.masked_fill_(~attn_bias, min_value)
+                        attn_bias = base_bias + window_bias
+                    else:
+                        attn_bias = attn_bias + window_bias
+                else:
+                    attn_bias = window_bias
+
+            attn_output = optimized_attention(query_states, key_states, value_states, self.num_heads, attn_bias, skip_reshape=True, low_precision_attention=False)
+            attn_output = self.o_proj(attn_output)
+
+            return attn_output
+            
+        return custom_forward
+
+    def register_capture_hooks(self, cache: dict) -> None:
+        """Monkey-patches the forward function to capture pre-rotated KV into cache."""
+        for idx, self_attn in self._layer_modules:
+            patched_fn = self._make_forward_wrapper(idx, cache, strength=1.0, is_capture=True, taper="none")
+            self_attn.forward = patched_fn.__get__(self_attn, type(self_attn))
+            self._patched_modules.append(self_attn)
+
+    def register_injection_hooks(self, cache: dict, strength: float, taper: str) -> None:
+        """Monkey-patches the forward function to concatenate cached pre-rotated reference KV with generated KV."""
+        for idx, self_attn in self._layer_modules:
+            patched_fn = self._make_forward_wrapper(idx, cache, strength=strength, is_capture=False, taper=taper)
+            self_attn.forward = patched_fn.__get__(self_attn, type(self_attn))
+            self._patched_modules.append(self_attn)
+            
+    # Keep stub for older node components
+    def register_condition_embedder_hook(self, extra_hidden_states: torch.Tensor, strength: float) -> None:
+        pass

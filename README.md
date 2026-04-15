@@ -25,6 +25,19 @@ Tools for manipulating and injecting chord information into the ACE-Step generat
 A utility node for side-by-side comparison of multiple audio generation outputs within the ComfyUI interface.
 - *Modified from components in the [ryanontheinside](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside) repository.*
 
+### [ace_step_reference](./ace_step_reference)
+A set of nodes for injecting reference audio into ACE-Step generation via multiple pathways.
+- **Timbre Encoding & Conditioning:** Encodes reference audio into a timbre embedding and injects it into the cross-attention pathway. This method is stable and generally works well for transferring vocal/instrumental characteristics.
+- **KV Self-Attention Injection:** Captures K/V tensors from a reference forward pass and injects them into the generation. This provides higher fidelity style transfer but is currently **WIP (Work In Progress)** with mixed results.
+- **Per-Step KV Injection:** Real-time capture and injection at every sampling step. This is the most computationally expensive method but allows for precise alignment.
+
+> [!TIP]
+> **Timbre Conditioning** and **KV Injection** can be chained inline to combine both methods for more comprehensive reference transfer. 
+> 
+> See the included example workflow: `example_workflows/three_injection_methods.json`.
+
+- Includes a **Reference Inspector** debug node to verify capture output.
+
 ### [ace_step_gguf_loader](./ace_step_gguf_loader)
 A custom GGUF and PyTorch bypass loader specifically designed for running quantized ACE-Step models natively inside ComfyUI.
 - Supports ACE-Step 1.5 DiT `acestep` architectures missing from standard allowlists.

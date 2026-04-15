@@ -1,6 +1,7 @@
 av
 numpy
 torch
+torchaudio
 gguf
 safetensors
 aiohttp
