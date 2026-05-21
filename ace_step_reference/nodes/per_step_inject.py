@@ -2,6 +2,7 @@ import torch
 
 from ..core import model_utils
 from ..core.hook_manager import HookManager
+from ..core.tensor_ops import compute_step_multiplier
 
 
 class PerStepSelfAttentionInject:
@@ -22,11 +23,38 @@ class PerStepSelfAttentionInject:
                         "tooltip": "Strength multiplier for reference Keys and Values during concatenation.",
                     },
                 ),
-                "taper": (
+                "layer_taper": (
                     ["none", "linear", "cosine"],
                     {
                         "default": "none",
-                        "tooltip": "Strength taper across the captured layer range.",
+                        "tooltip": "Strength taper across the captured layer range (layer-based, not step-based).",
+                    },
+                ),
+                "step_taper": (
+                    ["none", "fade_out", "fade_in", "cosine_fade_out", "cosine_fade_in", "cosine_bell"],
+                    {
+                        "default": "none",
+                        "tooltip": (
+                            "Scales injection strength across diffusion steps using the current timestep "
+                            "(t≈1 at step 1, t≈0 at the final step).\n"
+                            "none             — constant strength every step.\n"
+                            "fade_out         — linear 1→0  (strong early, gone by end).\n"
+                            "fade_in          — linear 0→1  (absent early, full by end).\n"
+                            "cosine_fade_out  — smooth cosine 1→0.\n"
+                            "cosine_fade_in   — smooth cosine 0→1.\n"
+                            "cosine_bell      — peaks at the midpoint of sampling (0→1→0)."
+                        ),
+                    },
+                ),
+                "time_taper": (
+                    ["none", "fade_out", "fade_in", "cosine_fade_out", "cosine_fade_in", "cosine_bell"],
+                    {
+                        "default": "none",
+                        "tooltip": (
+                            "Temporal scaling: fades the injection strength across the length of the audio sequence.\n"
+                            "fade_out = strong at the start of the audio clip, fading to 0 at the end.\n"
+                            "fade_in  = 0 at the start of the clip, ramping up to full strength at the end."
+                        ),
                     },
                 ),
                 "start_layer": ("INT", {"default": 0, "min": 0, "max": 31}),
@@ -52,7 +80,9 @@ class PerStepSelfAttentionInject:
         vae,
         audio,
         strength,
-        taper,
+        layer_taper,
+        step_taper,
+        time_taper,
         start_layer,
         end_layer,
     ):
@@ -190,8 +220,14 @@ class PerStepSelfAttentionInject:
                         )
 
             with torch.no_grad():
+                # Compute step-based multiplier from the current timestep.
+                # Timestep ≈ 1.0 at the very first step, ≈ 0.0 at the last.
+                t_now = float(wrap_kwargs["timestep"][0].item())
+                step_mult = compute_step_multiplier(t_now, step_taper)
+                effective_strength = strength * step_mult
+
                 with HookManager(raw_patched, (start_layer, end_layer)) as hm_inject:
-                    hm_inject.register_injection_hooks(attn_cache, strength, taper)
+                    hm_inject.register_injection_hooks(attn_cache, effective_strength, layer_taper, time_taper)
 
                     if prev_wrapper is not None:
                         return prev_wrapper(model_function, wrap_kwargs)
@@ -206,7 +242,8 @@ class PerStepSelfAttentionInject:
 
         print(
             f"[PerStepSelfAttentionInject] Attached — "
-            f"layers={start_layer}-{end_layer}, strength={strength}, taper={taper}\n"
+            f"layers={start_layer}-{end_layer}, strength={strength}, "
+            f"layer_taper={layer_taper}, step_taper={step_taper}, time_taper={time_taper}\n"
             f"[PerStepSelfAttentionInject] WARNING: 2x forward passes per step. "
             f"Expect ~2x slower sampling."
         )

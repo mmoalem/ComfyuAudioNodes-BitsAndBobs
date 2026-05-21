@@ -44,7 +44,7 @@ def patch(src: str, find: str, replace: str, *, count: int = 1, label: str = "")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Patch definitions (P1–P23: original patches, P24–P28: merge integration)
+# Patch definitions
 # ─────────────────────────────────────────────────────────────────────────────
 
 # --- Patch 1: Insert ACEStep imports + 5 critical rules after `import torch` ---
@@ -78,6 +78,7 @@ from .layer_scale import scale_patches
 
 
 # --- Patch 2: Make weight_decompose a no-op for non-DoRA (LoKr / LoHa) ---
+# Target: the TypeError raise when dora_scale is None inside weight_decompose_fixed
 P2_FIND = (
     "        if dora_scale is None or weight is None or lora_diff is None or alpha is None:\n"
     "            raise TypeError(\"weight_decompose_fixed missing required arguments (dora_scale, weight, lora_diff, alpha)\")\n"
@@ -112,6 +113,7 @@ def _is_flux_model(model: object) -> bool:
 
 
 # --- Patch 4: Extend _load_one() signature with layer-scale params ---
+# The method signature ends with `auto_strength_ratio_ceiling: float,`
 P4_FIND = (
     "        auto_strength_ratio_ceiling: float,\n"
     "    ):\n"
@@ -131,6 +133,7 @@ P4_REPLACE = (
 
 
 # --- Patch 5: Add adapter detection + lycoris key normalize after lora_sd is settled ---
+# Target: the line that calls _normalize_diffusers_dora_magnitude_keys
 P5_FIND = "        _normalize_diffusers_dora_magnitude_keys(lora_sd, verbose=verbose)\n"
 P5_REPLACE = """\
         # ── RULE 1: detect adapter type once, before any transform ──────────
@@ -313,6 +316,7 @@ P12_REPLACE = (
 
 
 # --- Patch 13: Extract layer_scale kwargs in load_loras() ---
+# Target: the block that reads auto_strength_enabled
 P13_FIND = (
     "        auto_strength_enabled = bool(kwargs.get(\"auto_strength_enabled\", False))\n"
 )
@@ -436,399 +440,6 @@ P23_REPLACE = (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# NEW PATCHES: Conflict-aware multi-LoRA merge integration (P24–P28)
-# Only activates for adapter_type in ("lora", "dora").
-# LoKr and LoHa always fall back to stack mode.
-# ─────────────────────────────────────────────────────────────────────────────
-
-# --- Patch 24: Import lora_merge module after layer_scale import ---
-P24_FIND = "from .layer_scale import scale_patches\n"
-P24_REPLACE = (
-    "from .layer_scale import scale_patches\n"
-    "from .lora_merge import merge_lora_state_dicts, MergeReport\n"
-)
-
-
-# --- Patch 25: Add merge controls to INPUT_TYPES (after auto-strength params) ---
-P25_FIND = (
-    "                    \"auto_strength_ratio_ceiling\": (\"FLOAT\","
-    " {\"default\": _AUTO_STRENGTH_RATIO_CEILING, \"min\": 0.0, \"max\": 16.0, \"step\": 0.01}),\n"
-)
-P25_REPLACE = (
-    "                    \"auto_strength_ratio_ceiling\": (\"FLOAT\","
-    " {\"default\": _AUTO_STRENGTH_RATIO_CEILING, \"min\": 0.0, \"max\": 16.0, \"step\": 0.01}),\n"
-    "\n"
-    "                    # ── Multi-LoRA conflict-aware merge (lora/dora only) ──\n"
-    "                    # stack      = independent stack (default, existing behaviour)\n"
-    "                    # auto       = weighted_avg when conflict<threshold, else TIES\n"
-    "                    # ties       = always TIES regardless of conflict ratio\n"
-    "                    # dare+auto  = DARE sparsify then auto-select strategy\n"
-    "                    # dare+ties  = DARE sparsify then always TIES\n"
-    "                    # LoKr / LoHa adapters always fall back to stack.\n"
-    "                    \"merge_mode\": ([\"stack\", \"auto\", \"ties\", \"dare+auto\", \"dare+ties\"],\n"
-    "                                   {\"default\": \"stack\",\n"
-    "                                    \"tooltip\": \"How to combine multiple LoRAs. "
-    "stack = independent (default). auto/ties = conflict-aware merge (lora/dora only).\"}),\n"
-    "                    \"merge_conflict_threshold\": (\"FLOAT\", {\n"
-    "                        \"default\": 0.25, \"min\": 0.0, \"max\": 1.0, \"step\": 0.05,\n"
-    "                        \"tooltip\": \"Sign-conflict ratio above which TIES is used instead of weighted_average (auto mode)\",\n"
-    "                    }),\n"
-    "                    \"merge_trim_ratio\": (\"FLOAT\", {\n"
-    "                        \"default\": 0.20, \"min\": 0.01, \"max\": 1.0, \"step\": 0.05,\n"
-    "                        \"tooltip\": \"TIES trim: fraction of elements kept per adapter (top-k by magnitude)\",\n"
-    "                    }),\n"
-    "                    \"merge_dare_sparsify_rate\": (\"FLOAT\", {\n"
-    "                        \"default\": 0.50, \"min\": 0.0, \"max\": 1.0, \"step\": 0.05,\n"
-    "                        \"tooltip\": \"DARE sparsification rate applied before merge (dare+* modes only)\",\n"
-    "                    }),\n"
-)
-
-
-# --- Patch 26: Inject _load_and_normalize_lora() and _load_merged_loras() ---
-# Inserted just before _load_one() inside the class body.
-# We target the def _load_one( line.
-P26_FIND = "    def _load_one(\n"
-P26_REPLACE = """\
-    def _load_and_normalize_lora(
-        self,
-        lora_name: str,
-        verbose: bool,
-        log_unloaded_keys: bool,
-    ) -> Tuple[Dict[str, Any], str]:
-        \"\"\"
-        Load a LoRA file from disk, run all key-normalization steps, and return
-        (normalized_sd, adapter_type) without touching the key_map or model.
-
-        This is the shared normalization kernel used by both the stack path
-        (_load_one) and the merge path (_load_merged_loras).
-        \"\"\"
-        lora_path = folder_paths.get_full_path("loras", lora_name)
-        if not lora_path:
-            raise FileNotFoundError(f"LoRA not found: {lora_name}")
-
-        try:
-            lora_sd_raw = comfy.utils.load_torch_file(lora_path, safe_load=True)
-        except TypeError:
-            lora_sd_raw = comfy.utils.load_torch_file(lora_path)
-
-        # Conversion + bypass-if-zeroed logic
-        lora_sd_conv = comfy.lora_convert.convert_lora(lora_sd_raw)
-        raw_up_n, _, raw_up_mx, _ = _suffix_tensor_stats(lora_sd_raw, ".lora_up.weight")
-        conv_up_n, _, conv_up_mx, _ = _suffix_tensor_stats(lora_sd_conv, ".lora_up.weight")
-        if raw_up_n and raw_up_mx > 0.0 and conv_up_n == raw_up_n and conv_up_mx == 0.0:
-            _LOG.warning(
-                "[ACEStep Adapter Loader] %s: convert_lora zeroed lora_up — bypassing conversion.",
-                lora_name,
-            )
-            try:
-                lora_sd = comfy.utils.load_torch_file(lora_path, safe_load=True)
-            except TypeError:
-                lora_sd = comfy.utils.load_torch_file(lora_path)
-        else:
-            lora_sd = lora_sd_conv
-
-        # RULE 1: detect adapter type once, before any transform
-        adapter_type = detect_adapter_type(lora_sd)
-        if verbose:
-            _LOG.info("[ACEStep Adapter Loader] %s: detected adapter_type=%s", lora_name, adapter_type)
-
-        # ACE-Step lycoris_ prefix → diffusion_model.* (LoKr/LoHa only)
-        normalize_acesteop_lycoris_keys(lora_sd, adapter_type, verbose=verbose)
-
-        # PEFT / Diffusers lora_A/B → lora_down/up (lora/dora only)
-        normalize_diffusers_peft_keys(lora_sd, adapter_type, verbose=verbose)
-
-        # DoRA magnitude key normalization (all types safe)
-        _normalize_diffusers_dora_magnitude_keys(lora_sd, verbose=verbose)
-
-        return lora_sd, adapter_type
-
-    def _load_merged_loras(
-        self,
-        model,
-        clip,
-        entries: List[Dict[str, Any]],
-        merge_mode: str,
-        merge_conflict_threshold: float,
-        merge_trim_ratio: float,
-        merge_dare_sparsify_rate: float,
-        verbose: bool,
-        log_unloaded_keys: bool,
-        zimage_lumina2_compat: bool,
-        layer_scale_enabled: bool,
-        self_attn_scale: float,
-        cross_attn_scale: float,
-        ffn_scale: float,
-        other_scale: float,
-        model_state_dict: Optional[Dict[str, Any]],
-        model_sd_keys: Optional[Set[str]],
-        model_sd_list: Optional[List[str]],
-        clip_state_dict: Optional[Dict[str, Any]],
-        clip_sd_keys: Optional[Set[str]],
-        clip_sd_list: Optional[List[str]],
-    ) -> Tuple[Any, Dict[str, Any]]:
-        \"\"\"
-        Conflict-aware merge path for lora/dora adapters.
-
-        1. Loads and normalises each LoRA state dict.
-        2. Splits adapters into two groups:
-              mergeable  — adapter_type in ("lora", "dora") — fed into merge_lora_state_dicts()
-              stack-only — adapter_type in ("lokr", "loha", "unknown") — loaded individually
-        3. Merges the mergeable group into a single state dict.
-        4. Loads the merged SD via comfy.lora.load_lora() and applies once (strength=1.0).
-        5. Applies any stack-only adapters via the normal _load_one() path.
-
-        Returns (new_model, merge_report_dict).
-        \"\"\"
-        dare_active = "dare" in merge_mode
-        force_ties  = "ties" in merge_mode and "auto" not in merge_mode
-
-        mergeable_entries: List[Tuple[Dict[str, Any], float, float]] = []
-        stack_entries:     List[Dict[str, Any]] = []
-
-        # ── Step 1: load and normalise ────────────────────────────────────────
-        for e in entries:
-            lora_name = e.get("lora")
-            sm = float(e.get("strength_model", 0.0))
-            sc = float(e.get("strength_clip", sm))
-            try:
-                lora_sd, adapter_type = self._load_and_normalize_lora(
-                    lora_name, verbose=verbose, log_unloaded_keys=log_unloaded_keys,
-                )
-            except Exception as exc:
-                _LOG.warning("[ACEStep Merge] failed to load %s (%r); skipping.", lora_name, exc)
-                continue
-
-            if adapter_type in ("lora", "dora"):
-                mergeable_entries.append((lora_sd, sm, sc))
-                if verbose:
-                    _LOG.info("[ACEStep Merge] %s → mergeable (adapter_type=%s)", lora_name, adapter_type)
-            else:
-                # LoKr, LoHa, unknown: schedule for individual stack load
-                stack_entries.append(e)
-                if verbose:
-                    _LOG.info(
-                        "[ACEStep Merge] %s → stack (adapter_type=%s; merge not supported for this type)",
-                        lora_name, adapter_type,
-                    )
-
-        merge_report: Dict[str, Any] = {}
-
-        # ── Step 2: merge lora/dora adapters ─────────────────────────────────
-        if len(mergeable_entries) >= 2:
-            # Override conflict threshold when force_ties is set
-            threshold = 0.0 if force_ties else merge_conflict_threshold
-
-            merged_sd, report_obj = merge_lora_state_dicts(
-                mergeable_entries,
-                conflict_threshold=threshold,
-                trim_ratio=merge_trim_ratio,
-                dare_sparsify_rate=merge_dare_sparsify_rate if dare_active else 0.0,
-                dare_conflict_aware=True,
-                verbose=verbose,
-            )
-            merge_report = report_obj.to_dict()
-
-            _LOG.info(
-                "[ACEStep Merge] merged %d lora/dora adapters: "
-                "bases=%d single=%d weighted_avg=%d ties=%d unmergeable=%d "
-                "mean_conflict=%.3f max_conflict=%.3f",
-                len(mergeable_entries),
-                merge_report.get("total_bases", 0),
-                merge_report.get("single_adapter_bases", 0),
-                merge_report.get("weighted_avg_bases", 0),
-                merge_report.get("ties_bases", 0),
-                merge_report.get("unmergeable_bases", 0),
-                merge_report.get("mean_conflict_ratio", 0.0),
-                merge_report.get("max_conflict_ratio", 0.0),
-            )
-
-            # Build key_map from live model + clip
-            key_map: Dict[str, Any] = {}
-            if model is not None:
-                key_map = comfy.lora.model_lora_keys_unet(model.model, key_map)
-            if clip is not None:
-                key_map = comfy.lora.model_lora_keys_clip(clip.cond_stage_model, key_map)
-
-            # ZiT/Lumina2 compat on merged SD (Flux-gated, RULE 4)
-            if zimage_lumina2_compat and model is not None and _is_flux_model(model):
-                _apply_zimage_lumina2_compat(
-                    lora_sd=merged_sd,
-                    model=model,
-                    model_sd_keys=model_sd_keys,
-                    key_map=key_map,
-                    verbose=verbose,
-                )
-
-            # Dynamic key matching for merged SD
-            merged_bases = _extract_lora_bases(merged_sd.keys())
-            _extend_key_map_with_dynamic_matches(
-                key_map=key_map,
-                lora_bases=merged_bases,
-                model_sd_keys=model_sd_keys,
-                model_sd_list=model_sd_list,
-                clip_sd_keys=clip_sd_keys,
-                clip_sd_list=clip_sd_list,
-                verbose=verbose,
-            )
-
-            # Load merged patches
-            try:
-                loaded = comfy.lora.load_lora(merged_sd, key_map, log_missing=log_unloaded_keys)
-            except TypeError:
-                try:
-                    loaded = comfy.lora.load_lora(merged_sd, key_map, log_unloaded_keys)
-                except TypeError:
-                    loaded = comfy.lora.load_lora(merged_sd, key_map)
-
-            _log_loaded_tensor_health("merged_loras", loaded, verbose=verbose)
-
-            # RULE 3: layer-scale on merged patches
-            if layer_scale_enabled:
-                loaded = scale_patches(
-                    loaded,
-                    self_attn_scale=self_attn_scale,
-                    cross_attn_scale=cross_attn_scale,
-                    ffn_scale=ffn_scale,
-                    other_scale=other_scale,
-                    lora_name="merged_loras",
-                    verbose=verbose,
-                )
-
-            # Strength is baked into the merged delta — apply with strength=1.0
-            if model is not None:
-                try:
-                    model.add_patches(loaded, 1.0)
-                except Exception:
-                    model.add_patches(loaded, 1.0)
-            if clip is not None:
-                try:
-                    clip.add_patches(loaded, 1.0)
-                except Exception:
-                    clip.add_patches(loaded, 1.0)
-
-        elif len(mergeable_entries) == 1:
-            # Single lora/dora: schedule for normal stack load (no merge overhead)
-            sd, sm, sc = mergeable_entries[0]
-            # We can't easily recover the original entry dict; rebuild minimal one.
-            # Find the entry that matches by strength.
-            for e in entries:
-                if (abs(float(e.get("strength_model", 0.0)) - sm) < 1e-6 and
-                        adapter_type in ("lora", "dora")):
-                    stack_entries.insert(0, e)
-                    break
-
-        return model, merge_report
-
-    def _load_one(\n"""
-
-
-# --- Patch 27: Read merge kwargs in load_loras() ---
-# Insert after auto_strength_ratio_ceiling extraction
-P27_FIND = (
-    "        if auto_strength_ratio_ceiling < auto_strength_ratio_floor:\n"
-    "            auto_strength_ratio_floor, auto_strength_ratio_ceiling ="
-    " auto_strength_ratio_ceiling, auto_strength_ratio_floor\n"
-)
-P27_REPLACE = (
-    "        if auto_strength_ratio_ceiling < auto_strength_ratio_floor:\n"
-    "            auto_strength_ratio_floor, auto_strength_ratio_ceiling ="
-    " auto_strength_ratio_ceiling, auto_strength_ratio_floor\n"
-    "\n"
-    "        # ── Multi-LoRA merge parameters ──────────────────────────────────\n"
-    "        merge_mode = str(kwargs.get(\"merge_mode\", \"stack\")).strip().lower()\n"
-    "        try:\n"
-    "            merge_conflict_threshold = float(kwargs.get(\"merge_conflict_threshold\", 0.25))\n"
-    "        except Exception:\n"
-    "            merge_conflict_threshold = 0.25\n"
-    "        try:\n"
-    "            merge_trim_ratio = float(kwargs.get(\"merge_trim_ratio\", 0.20))\n"
-    "        except Exception:\n"
-    "            merge_trim_ratio = 0.20\n"
-    "        try:\n"
-    "            merge_dare_sparsify_rate = float(kwargs.get(\"merge_dare_sparsify_rate\", 0.50))\n"
-    "        except Exception:\n"
-    "            merge_dare_sparsify_rate = 0.50\n"
-)
-
-
-# --- Patch 28: Dispatch to merge path in load_loras() ---
-# Insert just before the per-entry loop.
-# We target the line that starts the loop: "for row_index, e in enumerate(entries):"
-P28_FIND = (
-    "        for row_index, e in enumerate(entries):\n"
-    "            lora_name = e.get(\"lora\")\n"
-)
-P28_REPLACE = (
-    "        # ── Merge path: conflict-aware merge for lora/dora adapters ─────\n"
-    "        # Only activates when merge_mode != \"stack\" and there are >=2 active entries.\n"
-    "        # LoKr/LoHa adapters always fall back to the stack path regardless.\n"
-    "        active_entries = [e for e in entries if bool(e.get(\"on\", True))\n"
-    "                          and e.get(\"lora\") and e.get(\"lora\") not in (\"None\", \"NONE\")]\n"
-    "        if merge_mode != \"stack\" and len(active_entries) >= 2:\n"
-    "            new_model, merge_report_dict = self._load_merged_loras(\n"
-    "                new_model,\n"
-    "                new_clip,\n"
-    "                entries=active_entries,\n"
-    "                merge_mode=merge_mode,\n"
-    "                merge_conflict_threshold=merge_conflict_threshold,\n"
-    "                merge_trim_ratio=merge_trim_ratio,\n"
-    "                merge_dare_sparsify_rate=merge_dare_sparsify_rate,\n"
-    "                verbose=verbose,\n"
-    "                log_unloaded_keys=log_unloaded_keys,\n"
-    "                zimage_lumina2_compat=zimage_lumina2_compat,\n"
-    "                layer_scale_enabled=layer_scale_enabled,\n"
-    "                self_attn_scale=self_attn_scale,\n"
-    "                cross_attn_scale=cross_attn_scale,\n"
-    "                ffn_scale=ffn_scale,\n"
-    "                other_scale=other_scale,\n"
-    "                model_state_dict=model_state_dict,\n"
-    "                model_sd_keys=model_sd_keys,\n"
-    "                model_sd_list=model_sd_list,\n"
-    "                clip_state_dict=clip_state_dict,\n"
-    "                clip_sd_keys=clip_sd_keys,\n"
-    "                clip_sd_list=clip_sd_list,\n"
-    "            )\n"
-    "            merge_row = {\n"
-    "                \"row_index\": 0,\n"
-    "                \"enabled\": True,\n"
-    "                \"lora_name\": f\"[merged:{merge_mode}] \" + \", \".join(\n"
-    "                    str(e.get(\"lora\") or \"\") for e in active_entries\n"
-    "                ),\n"
-    "                \"status\": \"merged\",\n"
-    "                \"status_detail\": f\"mode={merge_mode} adapters={len(active_entries)}\",\n"
-    "                \"strength_model\": 1.0,\n"
-    "                \"strength_clip\": 1.0,\n"
-    "                \"report\": merge_report_dict,\n"
-    "            }\n"
-    "            report_rows.append(merge_row)\n"
-    "            stack_report = {\n"
-    "                \"schema\": 1,\n"
-    "                \"kind\": \"dora_power_lora_auto_strength_stack_report\",\n"
-    "                \"auto_strength_enabled\": auto_strength_enabled,\n"
-    "                \"auto_strength_device\": auto_strength_device,\n"
-    "                \"merge_mode\": merge_mode,\n"
-    "                \"ratio_floor\": auto_strength_ratio_floor,\n"
-    "                \"ratio_ceiling\": auto_strength_ratio_ceiling,\n"
-    "                \"rows\": report_rows,\n"
-    "            }\n"
-    "            report_json = _auto_strength_json_dumps(stack_report, pretty=True)\n"
-    "            report_text = _build_auto_strength_stack_text_report(stack_report)\n"
-    "            return {\n"
-    "                \"result\": (new_model, report_json, report_text),\n"
-    "                \"ui\": {\n"
-    "                    \"auto_strength_report_json\": (report_json,),\n"
-    "                    \"analysis_report\": (report_text,),\n"
-    "                },\n"
-    "            }\n"
-    "\n"
-    "        # ── Stack path (default): apply LoRAs independently ──────────────\n"
-    "        for row_index, e in enumerate(entries):\n"
-    "            lora_name = e.get(\"lora\")\n"
-)
-
-
 # --- Patch 20: Append ACEStepUniversalAdapterLoaderSimple subclass ---
 P20_APPEND = """
 
@@ -885,21 +496,15 @@ def main():
         (P21_FIND, P21_REPLACE, "update _BASE_SUFFIXES for LoKr/LoHa"),
         (P22_FIND, P22_REPLACE, "always-on base-count telemetry"),
         (P23_FIND, P23_REPLACE, "always-on mapping telemetry"),
-        # ── New merge patches ──────────────────────────────────────────────────
-        (P24_FIND, P24_REPLACE, "[merge] import lora_merge module"),
-        (P25_FIND, P25_REPLACE, "[merge] add merge controls to INPUT_TYPES"),
-        (P26_FIND, P26_REPLACE, "[merge] inject _load_and_normalize_lora + _load_merged_loras"),
-        (P27_FIND, P27_REPLACE, "[merge] read merge kwargs in load_loras()"),
-        (P28_FIND, P28_REPLACE, "[merge] dispatch to merge path in load_loras()"),
     ]
 
     print("\nApplying patches:")
     for item in patches:
-        find    = item[0]
+        find = item[0]
         replace = item[1]
-        label   = item[2]
-        count   = item[3] if len(item) > 3 else 1
-        src     = patch(src, find, replace, count=count, label=label)
+        label = item[2]
+        count = item[3] if len(item) > 3 else 1
+        src = patch(src, find, replace, count=count, label=label)
 
     print("\nApplying custom appended classes...")
     src += P20_APPEND

@@ -46,8 +46,8 @@ class HookManager:
     # Capture & Inject — Dynamically binds replacement forward
     # ------------------------------------------------------------------
 
-    def _make_forward_wrapper(self, layer_idx: int, cache: dict, strength: float, is_capture: bool, taper: str):
-        """Creates a bound monkey-patched forward function for AceStepAttention."""
+    def _make_forward_wrapper(self, layer_idx: int, cache: dict, strength: float, is_capture: bool, taper: str, time_taper: str = "none"):
+        """Creates a bound monkey-patched forward function for the self_attn module."""
         
         effective_strength = strength
         if taper != "none" and not is_capture:
@@ -121,6 +121,14 @@ class HookManager:
                             ref_k = ref_k.expand(bsz, -1, -1, -1)
                             ref_v = ref_v.expand(bsz, -1, -1, -1)
                         
+                        # Apply temporal scaling if requested (fading across the audio sequence length)
+                        if time_taper != "none":
+                            time_mult = tensor_ops.compute_time_multiplier(
+                                ref_k.shape[2], time_taper, ref_device, ref_dtype
+                            )
+                            ref_k = ref_k * time_mult
+                            ref_v = ref_v * time_mult
+                        
                         # Apply strength scaling prior to sequence concatenation
                         ref_k = ref_k * effective_strength
                         ref_v = ref_v * effective_strength
@@ -182,13 +190,34 @@ class HookManager:
             self_attn.forward = patched_fn.__get__(self_attn, type(self_attn))
             self._patched_modules.append(self_attn)
 
-    def register_injection_hooks(self, cache: dict, strength: float, taper: str) -> None:
+    def register_injection_hooks(self, cache: dict, strength: float, taper: str, time_taper: str = "none") -> None:
         """Monkey-patches the forward function to concatenate cached pre-rotated reference KV with generated KV."""
         for idx, self_attn in self._layer_modules:
-            patched_fn = self._make_forward_wrapper(idx, cache, strength=strength, is_capture=False, taper=taper)
+            patched_fn = self._make_forward_wrapper(
+                idx, cache, strength=strength, is_capture=False, taper=taper, time_taper=time_taper
+            )
             self_attn.forward = patched_fn.__get__(self_attn, type(self_attn))
             self._patched_modules.append(self_attn)
-            
+
+    def register_injection_hooks_per_layer(self, cache: dict, layer_strengths: dict, time_taper: str = "none") -> None:
+        """Monkey-patches only the layers that have a non-zero individual strength.
+
+        Args:
+            cache:          KV cache populated by register_capture_hooks.
+            layer_strengths: dict mapping layer index → strength float.
+                             Layers with strength <= 0 are skipped entirely —
+                             no patch is applied and the original forward is used.
+        """
+        for idx, self_attn in self._layer_modules:
+            s = layer_strengths.get(idx, 0.0)
+            if s <= 0.0:
+                continue  # leave this layer completely unpatched
+            patched_fn = self._make_forward_wrapper(
+                idx, cache, strength=s, is_capture=False, taper="none", time_taper=time_taper
+            )
+            self_attn.forward = patched_fn.__get__(self_attn, type(self_attn))
+            self._patched_modules.append(self_attn)
+
     # Keep stub for older node components
     def register_condition_embedder_hook(self, extra_hidden_states: torch.Tensor, strength: float) -> None:
         pass
