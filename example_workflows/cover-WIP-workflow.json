@@ -1,0 +1,1412 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "revision": 0,
+  "last_node_id": 768,
+  "last_link_id": 56,
+  "nodes": [
+    {
+      "id": 104,
+      "type": "UNETLoader",
+      "pos": [
+        100,
+        130
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            40
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "Ace-step\\acestep_v1.5_xl_merge_sft_turbo_ta_0.7.safetensors",
+        "default"
+      ]
+    },
+    {
+      "id": 106,
+      "type": "VAELoader",
+      "pos": [
+        100,
+        342
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            30,
+            55
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "ace_1.5_vae.safetensors"
+      ]
+    },
+    {
+      "id": 126,
+      "type": "LoadAudio",
+      "pos": [
+        100,
+        530
+      ],
+      "size": [
+        282.798828125,
+        136
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            38
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "ComfyUI_temp_cgqso_00001_.flac",
+        null,
+        ""
+      ]
+    },
+    {
+      "id": 206,
+      "type": "DualCLIPLoaderMultiGPU",
+      "pos": [
+        100,
+        796
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            52
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfyui-multigpu",
+        "ver": "b51c99a525e9607e43545ee2a8b7694c74a4775a",
+        "Node name for S&R": "DualCLIPLoaderMultiGPU"
+      },
+      "widgets_values": [
+        "ace-step\\deconstructed-QWEN-ACE\\qwen_0.6b.safetensors",
+        "ace-step\\deconstructed-QWEN-ACE\\qwen_2b.safetensors",
+        "ace",
+        "cuda:0"
+      ]
+    },
+    {
+      "id": 314,
+      "type": "VAEDecodeAudio",
+      "pos": [
+        2385.0357421875,
+        130
+      ],
+      "size": [
+        164.2388671875,
+        46
+      ],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 29
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 30
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            31,
+            37
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "VAEDecodeAudio"
+      }
+    },
+    {
+      "id": 318,
+      "type": "PreviewAudio",
+      "pos": [
+        2649.274609375,
+        130
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 31
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 319,
+      "type": "KSampler",
+      "pos": [
+        2015.0357421875,
+        130
+      ],
+      "size": [
+        270,
+        262
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 33
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 34
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 35
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 36
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            29
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        0,
+        "randomize",
+        30,
+        1,
+        "seeds_3",
+        "karras",
+        1
+      ]
+    },
+    {
+      "id": 322,
+      "type": "PreviewAudioMultiCompare",
+      "pos": [
+        2649.274609375,
+        348
+      ],
+      "size": [
+        235.6470703125,
+        126
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio_a",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "audio_b",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "audio_c",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 37
+        },
+        {
+          "name": "audio_d",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "audio_e",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        },
+        {
+          "name": "audio_f",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 38
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "aux_id": "mmoalem/ComfyuAudioNodes-BitsAndBobs",
+        "ver": "55666470c434e4efeb81251c36ad69bc57fbd9d6",
+        "Node name for S&R": "PreviewAudioMultiCompare"
+      }
+    },
+    {
+      "id": 388,
+      "type": "ModelSamplingAuraFlow",
+      "pos": [
+        1175,
+        130
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 39
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            54
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "ModelSamplingAuraFlow"
+      },
+      "widgets_values": [
+        1
+      ]
+    },
+    {
+      "id": 439,
+      "type": "ACEStep Universal Adapter Loader (Simple)",
+      "pos": [
+        675,
+        130
+      ],
+      "size": [
+        360,
+        334
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 40
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            39
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "aux_id": "mmoalem/ComfyuAudioNodes-BitsAndBobs",
+        "ver": "55666470c434e4efeb81251c36ad69bc57fbd9d6",
+        "Node name for S&R": "ACEStep Universal Adapter Loader (Simple)",
+        "dora_power_lora": {
+          "rows": [
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            },
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            },
+            {
+              "enabled": true,
+              "name": "None",
+              "strengthModel": 1,
+              "strengthClip": 1
+            }
+          ],
+          "globals": {
+            "stack_enabled": true,
+            "verbose": false,
+            "log_unloaded_keys": false,
+            "auto_strength_enabled": true,
+            "auto_strength_device": "gpu",
+            "auto_strength_ratio_floor": 0.3,
+            "auto_strength_ratio_ceiling": 1.5,
+            "dora_fp32_normalization": true,
+            "dora_slice_fix": true,
+            "dora_adaln_swap_fix": true,
+            "zimage_lumina2_compat": false,
+            "layer_scale_enabled": true,
+            "self_attn_scale": 1,
+            "cross_attn_scale": 1,
+            "ffn_scale": 1,
+            "other_scale": 1
+          }
+        }
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 459,
+      "type": "LoadAudio",
+      "pos": [
+        100,
+        1056
+      ],
+      "size": [
+        282.798828125,
+        136
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "The Police - Roxanne (Remastered 2003).flac",
+        null,
+        ""
+      ]
+    },
+    {
+      "id": 694,
+      "type": "ACEStepFilenameFormatter",
+      "pos": [
+        675,
+        1024
+      ],
+      "size": [
+        306.194921875,
+        174
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "key",
+          "type": "*",
+          "link": 43
+        },
+        {
+          "name": "time_signature",
+          "type": "*",
+          "link": 44
+        },
+        {
+          "name": "bpm",
+          "type": "INT",
+          "widget": {
+            "name": "bpm"
+          },
+          "link": 41
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 42
+        }
+      ],
+      "outputs": [
+        {
+          "name": "filename_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "ACEStepFilenameFormatter"
+      },
+      "widgets_values": [
+        "audio/RomanticPiano",
+        "RomPiano",
+        120,
+        0,
+        "randomize"
+      ]
+    },
+    {
+      "id": 749,
+      "type": "AceStepChordPreview",
+      "pos": [
+        100,
+        1322
+      ],
+      "size": [
+        400,
+        262
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "chord_audio",
+          "type": "AUDIO",
+          "links": [
+            45
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "aux_id": "scruffynerf/scromfyUI-AceStep",
+        "ver": "b4572c2d5723fae6a8aaa6186e6736f8481c1263",
+        "Node name for S&R": "AceStepChordPreview"
+      },
+      "widgets_values": [
+        "Am C Dm Em F G Am E \n",
+        "",
+        120,
+        4,
+        60,
+        "pad",
+        1
+      ]
+    },
+    {
+      "id": 750,
+      "type": "PreviewAudio",
+      "pos": [
+        675,
+        594
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 45
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 768,
+      "type": "LoadAudioUI",
+      "pos": [
+        100,
+        1714
+      ],
+      "size": [
+        475,
+        378
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            56
+          ]
+        },
+        {
+          "name": "duration",
+          "type": "FLOAT",
+          "links": [
+            49,
+            53
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "WhatDreamsCost-ComfyUI",
+        "ver": "da7c5d351b9e3773e0a01391875dd01aa02f1175",
+        "Node name for S&R": "LoadAudioUI"
+      },
+      "widgets_values": [
+        "Melody2 - plus octave.mp3",
+        0,
+        42.03,
+        42.03,
+        null,
+        "",
+        ""
+      ]
+    },
+    {
+      "id": "204:47",
+      "type": "ConditioningZeroOut",
+      "pos": [
+        1175,
+        318
+      ],
+      "size": [
+        204.134765625,
+        26
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            35
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "ConditioningZeroOut"
+      }
+    },
+    {
+      "id": "204:94",
+      "type": "TextEncodeAceStepAudio1.5",
+      "pos": [
+        675,
+        1328
+      ],
+      "size": [
+        400,
+        454
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 52
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "widget": {
+            "name": "seed"
+          },
+          "link": 47
+        },
+        {
+          "name": "bpm",
+          "type": "INT",
+          "widget": {
+            "name": "bpm"
+          },
+          "link": 48
+        },
+        {
+          "name": "duration",
+          "type": "FLOAT",
+          "widget": {
+            "name": "duration"
+          },
+          "link": 49
+        },
+        {
+          "name": "timesignature",
+          "type": "COMBO",
+          "widget": {
+            "name": "timesignature"
+          },
+          "link": 50
+        },
+        {
+          "name": "keyscale",
+          "type": "COMBO",
+          "widget": {
+            "name": "keyscale"
+          },
+          "link": 51
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            34,
+            46
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "TextEncodeAceStepAudio1.5"
+      },
+      "widgets_values": [
+        "concert-hall acoustic, rich resonance, lush spatial presence, state-of-the-art Telarc recording, full-bodied pedal harp, liquid tone, expansive three-dimensional roundness, classical virtuosity, romantic classical harp, ethereal Gymnopédie No. 1, minimalist and pensive with a liquid-like tone and expansive spatial decay.",
+        "[instrumental]",
+        0,
+        "randomize",
+        120,
+        120,
+        "2",
+        "en",
+        "C major",
+        false,
+        10,
+        0.85,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "204:696",
+      "type": "ACEStepTimeSignatureSelector",
+      "pos": [
+        100,
+        2126
+      ],
+      "size": [
+        336.99765625,
+        78
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "TIME_SIG_STR",
+          "type": "*",
+          "links": [
+            44,
+            50
+          ]
+        },
+        {
+          "name": "TIME_SIG_INT",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "ACEStepTimeSignatureSelector"
+      },
+      "widgets_values": [
+        "4"
+      ]
+    },
+    {
+      "id": "204:690",
+      "type": "ACEStepKeySelector",
+      "pos": [
+        100,
+        2334
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "KEY_STRING",
+          "type": "*",
+          "links": [
+            43,
+            51
+          ]
+        },
+        {
+          "name": "KEY_INDEX",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "Node name for S&R": "ACEStepKeySelector"
+      },
+      "widgets_values": [
+        "C major"
+      ]
+    },
+    {
+      "id": "204:692",
+      "type": "PrimitiveInt",
+      "pos": [
+        100,
+        2542
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "INT",
+          "type": "INT",
+          "links": [
+            41,
+            48
+          ]
+        }
+      ],
+      "title": "BPM",
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "PrimitiveInt"
+      },
+      "widgets_values": [
+        120,
+        "fixed"
+      ]
+    },
+    {
+      "id": "204:118",
+      "type": "EmptyAceStep1.5LatentAudio",
+      "pos": [
+        675,
+        812
+      ],
+      "size": [
+        314.90390625,
+        82
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "seconds",
+          "type": "FLOAT",
+          "widget": {
+            "name": "seconds"
+          },
+          "link": 53
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfy-core",
+        "ver": "0.23.0",
+        "Node name for S&R": "EmptyAceStep1.5LatentAudio"
+      },
+      "widgets_values": [
+        120,
+        1
+      ]
+    },
+    {
+      "id": "204:335",
+      "type": "ttN seed",
+      "pos": [
+        100,
+        2754
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "seed",
+          "type": "INT",
+          "links": [
+            32,
+            42,
+            47
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "cnr_id": "comfyui_tinyterranodes",
+        "ver": "15411635b1d49794372e730091654521e3155dce",
+        "Node name for S&R": "ttN seed"
+      },
+      "widgets_values": [
+        649,
+        "randomize"
+      ]
+    },
+    {
+      "id": "771:767",
+      "type": "PerStepSelfAttentionInjectPerLayer",
+      "pos": [
+        1545,
+        130
+      ],
+      "size": [
+        370.0357421875,
+        1034
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 54
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 55
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 56
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [
+            33
+          ]
+        }
+      ],
+      "properties": {
+        "ue_properties": {
+          "widget_ue_connectable": {},
+          "input_ue_unconnectable": {}
+        },
+        "aux_id": "mmoalem/ComfyuAudioNodes-BitsAndBobs",
+        "ver": "55666470c434e4efeb81251c36ad69bc57fbd9d6",
+        "Node name for S&R": "PerStepSelfAttentionInjectPerLayer"
+      },
+      "widgets_values": [
+        "inject",
+        "none",
+        0,
+        7,
+        "----------------------------------------",
+        "cosine_fade_out",
+        "none",
+        "----------------------------------------",
+        1,
+        1.5,
+        1,
+        1,
+        1,
+        1.5,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "links": [
+    [
+      29,
+      319,
+      0,
+      314,
+      0,
+      "LATENT"
+    ],
+    [
+      30,
+      106,
+      0,
+      314,
+      1,
+      "VAE"
+    ],
+    [
+      31,
+      314,
+      0,
+      318,
+      0,
+      "AUDIO"
+    ],
+    [
+      32,
+      "204:335",
+      0,
+      319,
+      4,
+      "INT"
+    ],
+    [
+      33,
+      "771:767",
+      0,
+      319,
+      0,
+      "MODEL"
+    ],
+    [
+      34,
+      "204:94",
+      0,
+      319,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      35,
+      "204:47",
+      0,
+      319,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      36,
+      "204:118",
+      0,
+      319,
+      3,
+      "LATENT"
+    ],
+    [
+      37,
+      314,
+      0,
+      322,
+      2,
+      "AUDIO"
+    ],
+    [
+      38,
+      126,
+      0,
+      322,
+      5,
+      "AUDIO"
+    ],
+    [
+      39,
+      439,
+      0,
+      388,
+      0,
+      "MODEL"
+    ],
+    [
+      40,
+      104,
+      0,
+      439,
+      0,
+      "MODEL"
+    ],
+    [
+      41,
+      "204:692",
+      0,
+      694,
+      2,
+      "INT"
+    ],
+    [
+      42,
+      "204:335",
+      0,
+      694,
+      3,
+      "INT"
+    ],
+    [
+      43,
+      "204:690",
+      0,
+      694,
+      0,
+      "*"
+    ],
+    [
+      44,
+      "204:696",
+      0,
+      694,
+      1,
+      "*"
+    ],
+    [
+      45,
+      749,
+      0,
+      750,
+      0,
+      "AUDIO"
+    ],
+    [
+      46,
+      "204:94",
+      0,
+      "204:47",
+      0,
+      "CONDITIONING"
+    ],
+    [
+      47,
+      "204:335",
+      0,
+      "204:94",
+      1,
+      "INT"
+    ],
+    [
+      48,
+      "204:692",
+      0,
+      "204:94",
+      2,
+      "INT"
+    ],
+    [
+      49,
+      768,
+      1,
+      "204:94",
+      3,
+      "FLOAT"
+    ],
+    [
+      50,
+      "204:696",
+      0,
+      "204:94",
+      4,
+      "COMBO"
+    ],
+    [
+      51,
+      "204:690",
+      0,
+      "204:94",
+      5,
+      "COMBO"
+    ],
+    [
+      52,
+      206,
+      0,
+      "204:94",
+      0,
+      "CLIP"
+    ],
+    [
+      53,
+      768,
+      1,
+      "204:118",
+      0,
+      "FLOAT"
+    ],
+    [
+      54,
+      388,
+      0,
+      "771:767",
+      0,
+      "MODEL"
+    ],
+    [
+      55,
+      106,
+      0,
+      "771:767",
+      1,
+      "VAE"
+    ],
+    [
+      56,
+      768,
+      0,
+      "771:767",
+      2,
+      "AUDIO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "ds": {
+      "scale": 0.7400249944258178,
+      "offset": [
+        -410.15851563949093,
+        246.89713740981904
+      ]
+    },
+    "frontendVersion": "1.44.19",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
