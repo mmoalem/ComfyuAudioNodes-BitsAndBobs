@@ -97,49 +97,47 @@ def _build_input_types():
                 "max": 5.0,
                 "step": 0.05,
                 "tooltip": (
-                    f"Self-attention KV injection strength for decoder layer {i}. "
+                    f"Cross-attention KV injection strength for decoder layer {i}. "
                     "0.0 = this layer is skipped entirely (taper does not re-enable it)."
                 ),
             },
         )
     return {"required": required}
- 
- 
-class PerStepSelfAttentionInjectPerLayer:
-    """Per-step self-attention KV injection/replacement with individual per-layer strength control.
- 
-    Identical to PerStepSelfAttentionInject but exposes a separate strength
-    slider for each of the 32 decoder layers.  Layers set to 0 are completely
+
+
+class PerStepCrossAttentionInjectPerLayer:
+    """Per-step cross-attention KV injection/replacement with individual per-layer strength control.
+
+    Identical to PerStepCrossAttentionInject but exposes a separate strength
+    slider for each of the 32 decoder layers. Layers set to 0 are completely
     bypassed — no monkey-patch is applied, so there is no overhead for unused layers.
- 
+
     Use-cases
     ---------
-    * Inject only a handful of specific layers (e.g. 1, 8, 10) without chaining
-      multiple PerStepSelfAttentionInject nodes (chaining causes each injection to
-      corrupt the cached KV used by the next one).
-    * Fine-tune which layers contribute to the reference effect — early layers tend
-      to control coarse structure / rhythm, late layers refine texture / timbre.
-    * Asymmetric injection: boost key structural layers while leaving others clean.
- 
+    * Style bleed: Inject cross-attention conditioning from a reference audio / prompt
+      only into specific decoder layers.
+    * Prompt anchoring: Reinforce cross-attention representations across steps at
+      precise layers without chaining.
+
     WARNING: Still runs 2× forward passes per step — expect ~2× slower sampling.
     Compatible with BF16, FP16, FP32, FP8, and GGUF checkpoints.
     """
- 
+
     @classmethod
     def INPUT_TYPES(cls):
         return _build_input_types()
- 
+
     RETURN_TYPES = ("MODEL",)
     RETURN_NAMES = ("model",)
     FUNCTION = "inject"
     CATEGORY = "ACE-Step/Reference"
     DESCRIPTION = (
-        "Per-step self-attention KV injection/replacement with individual strength per layer (0-31). "
+        "Per-step cross-attention KV injection/replacement with individual strength per layer (0-31). "
         "Set a layer's strength to 0 to skip it entirely. "
         "Choose between standard inject (blending), hard replace, or threshold-based hybrid mode. "
         "WARNING: 2× forward passes per step — ~2× slower sampling."
     )
- 
+
     def inject(self, model, vae, audio, mode, layer_taper, taper_start_layer, taper_end_layer, step_taper, time_taper, **kwargs):
         # Collect raw per-layer strengths from kwargs and apply taper as a multiplier.
         # A layer explicitly set to 0 is ALWAYS skipped — taper cannot re-enable it.
@@ -157,9 +155,6 @@ class PerStepSelfAttentionInjectPerLayer:
             if layer_taper == "none":
                 effective = raw
             else:
-                # compute_layer_strength returns base_strength × taper_factor.
-                # We want just the taper_factor, so pass base_strength=1.0
-                # then multiply by the user's raw value.
                 taper_factor = compute_layer_strength(
                     i, taper_start_layer, taper_end_layer, 1.0, layer_taper
                 )
@@ -170,7 +165,7 @@ class PerStepSelfAttentionInjectPerLayer:
 
         if not active_layers:
             print(
-                "[PerStepSelfAttentionInjectPerLayer] WARNING: all effective layer strengths are 0 "
+                "[PerStepCrossAttentionInjectPerLayer] WARNING: all effective layer strengths are 0 "
                 "(check taper settings or layer sliders). Returning unmodified model."
             )
             return (model,)
@@ -212,13 +207,10 @@ class PerStepSelfAttentionInjectPerLayer:
 
         prev_wrapper = patched.model_options.get("model_function_wrapper", None)
 
-        # HookManager needs a layer range covering all active layers.
-        # We pass (0, 31) so _build_layer_index indexes everything;
-        # register_injection_hooks_per_layer then selects which ones to patch.
         hook_layer_range = (0, _NUM_LAYERS - 1)
 
         # ----------------------------------------------------------------
-        # Helpers — identical to PerStepSelfAttentionInject
+        # Helpers
         # ----------------------------------------------------------------
         def _match_t_to_generation(ref, gen_t):
             ref_t = ref.shape[2]
@@ -229,24 +221,25 @@ class PerStepSelfAttentionInjectPerLayer:
             repeats = (gen_t + ref_t - 1) // ref_t
             return ref.repeat(1, 1, repeats)[:, :, :gen_t]
 
-        def _build_null_ref_wrap(wrap_kwargs, noised_ref, ref_timestep):
+        def _build_ref_wrap(wrap_kwargs, noised_ref, ref_timestep):
+            """Build a reference forward pass dict.
+            We keep the REAL cross-attention conditioning (c_crossattn) from the
+            generation kwargs so that the K/V we capture reflect the reference
+            audio's conditioning under the actual prompt.
+            """
             ref_wrap = {}
             ref_wrap["input"] = noised_ref
             ref_wrap["timestep"] = ref_timestep
-            ref_wrap["cond_or_uncond"] = [0]
+            ref_wrap["cond_or_uncond"] = [0]  # cond-only pass
 
-            null_c = {}
+            ref_c = {}
             for k, v in wrap_kwargs.get("c", {}).items():
-                if k == "c_crossattn" and isinstance(v, torch.Tensor):
-                    null_c[k] = torch.zeros(
-                        1, v.shape[1], v.shape[2],
-                        device=v.device, dtype=v.dtype
-                    )
-                elif isinstance(v, torch.Tensor) and v.shape[0] > 1:
-                    null_c[k] = v[:1]
+                if isinstance(v, torch.Tensor) and v.shape[0] > 1:
+                    ref_c[k] = v[:1]
                 else:
-                    null_c[k] = v
-            ref_wrap["c"] = null_c
+                    ref_c[k] = v
+            ref_wrap["c"] = ref_c
+
             return ref_wrap
 
         _t_logged = [False]
@@ -267,7 +260,7 @@ class PerStepSelfAttentionInjectPerLayer:
 
                 if not _t_logged[0] and ref_latent.shape[2] != gen_t:
                     print(
-                        f"[PerStepSelfAttentionInjectPerLayer] Reference T={ref_latent.shape[2]} != "
+                        f"[PerStepCrossAttentionInjectPerLayer] Reference T={ref_latent.shape[2]} != "
                         f"generation T={gen_t} — "
                         f"{'trimmed' if ref_latent.shape[2] > gen_t else 'repeat-padded'} "
                         f"to T={gen_t} for every capture pass."
@@ -284,12 +277,12 @@ class PerStepSelfAttentionInjectPerLayer:
                 else:
                     noised_ref = ref_matched + noise * ref_timestep.view(-1, 1, 1).to(ref_dev, ref_dtype)
 
-                ref_wrap = _build_null_ref_wrap(wrap_kwargs, noised_ref, ref_timestep)
+                ref_wrap = _build_ref_wrap(wrap_kwargs, noised_ref, ref_timestep)
 
                 # Capture pass — hook all layers so we have the full cache available
                 attn_cache = {}
                 with HookManager(raw_patched, hook_layer_range) as hm_capture:
-                    hm_capture.register_capture_hooks(attn_cache)
+                    hm_capture.register_capture_hooks(attn_cache, is_cross=True)
                     if prev_wrapper is not None:
                         prev_wrapper(model_function, ref_wrap)
                     else:
@@ -301,15 +294,13 @@ class PerStepSelfAttentionInjectPerLayer:
 
             # Injection pass — only patch layers with strength > 0 after step scaling
             with torch.no_grad():
-                # Step-based multiplier: scale all layer strengths by a factor
-                # derived from the current timestep (1.0 at start, 0.0 at end).
                 t_now = float(wrap_kwargs["timestep"][0].item())
                 step_mult = compute_step_multiplier(t_now, step_taper)
                 step_scaled = {k: v * step_mult for k, v in layer_strengths.items()}
 
                 with HookManager(raw_patched, hook_layer_range) as hm_inject:
                     hm_inject.register_injection_hooks_per_layer(
-                        attn_cache, step_scaled, mode=mode, time_taper=time_taper
+                        attn_cache, step_scaled, mode=mode, time_taper=time_taper, is_cross=True
                     )
 
                     if prev_wrapper is not None:
@@ -325,12 +316,12 @@ class PerStepSelfAttentionInjectPerLayer:
 
         eff = {i: round(layer_strengths[i], 4) for i in active_layers}
         print(
-            f"[PerStepSelfAttentionInjectPerLayer] Attached — "
+            f"[PerStepCrossAttentionInjectPerLayer] Attached — "
             f"mode={mode}, layer_taper={layer_taper} [{taper_start_layer}→{taper_end_layer}], "
             f"step_taper={step_taper}, time_taper={time_taper}, "
             f"active layers: {active_layers}\n"
             f"  base strengths (after layer taper): {eff}\n"
-            f"[PerStepSelfAttentionInjectPerLayer] WARNING: 2x forward passes per step. "
+            f"[PerStepCrossAttentionInjectPerLayer] WARNING: 2x forward passes per step. "
             f"Expect ~2x slower sampling."
         )
 

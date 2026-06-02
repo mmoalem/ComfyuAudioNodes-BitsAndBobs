@@ -4,7 +4,9 @@ from .nodes.kv_capture import SelfAttentionCapture
 from .nodes.kv_inject import SelfAttentionInject
 from .nodes.per_step_inject import PerStepSelfAttentionInject
 from .nodes.per_step_inject_per_layer import PerStepSelfAttentionInjectPerLayer
+from .nodes.per_step_cross_attn_inject_per_layer import PerStepCrossAttentionInjectPerLayer
 from .nodes.inspector import ReferenceInspector
+from .nodes.debug_inject import DebugPerStepSAInject
 
 NODE_CLASS_MAPPINGS = {
     "AudioTimbreEncode": AudioTimbreEncode,
@@ -13,7 +15,9 @@ NODE_CLASS_MAPPINGS = {
     "SelfAttentionInject": SelfAttentionInject,
     "PerStepSelfAttentionInject": PerStepSelfAttentionInject,
     "PerStepSelfAttentionInjectPerLayer": PerStepSelfAttentionInjectPerLayer,
+    "PerStepCrossAttentionInjectPerLayer": PerStepCrossAttentionInjectPerLayer,
     "ReferenceInspector": ReferenceInspector,
+    "DebugPerStepSAInject": DebugPerStepSAInject,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -23,6 +27,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SelfAttentionInject": "Self-Attention Inject",
     "PerStepSelfAttentionInject": "Per-Step Self-Attention Inject",
     "PerStepSelfAttentionInjectPerLayer": "Per-Step Self-Attention Inject (Per Layer)",
+    "PerStepCrossAttentionInjectPerLayer": "Per-Step Cross-Attention Inject (Per Layer)",
     "ReferenceInspector": "Reference Inspector",
 }
 
