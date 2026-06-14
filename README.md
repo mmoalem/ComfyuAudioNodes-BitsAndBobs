@@ -75,3 +75,11 @@ A custom GGUF and PyTorch bypass loader specifically designed for running quanti
 Special thanks to the original authors whose work served as the foundation for these nodes:
 - **xmarre** ([DoRA Power LoRA Loader](https://github.com/xmarre/ComfyUI-DoRA-Dynamic-LoRA-Loader))
 - **ryanontheinside** ([RyanOnTheInside ComfyUI Nodes](https://github.com/ryanontheinside/ComfyUI_RyanOnTheInside))
+
+---
+
+## Support
+
+If you find this project useful, consider supporting my work:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/mmoalem)
