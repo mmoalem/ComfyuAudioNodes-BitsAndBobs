@@ -97,29 +97,21 @@ def safe_cast(tensor: Tensor, dtype, device) -> Tensor:
     return tensor.to(dtype=dtype, device=device)
 
 
-def compute_step_multiplier(t: float, mode: str, end_pct: float = 100.0) -> float:
+def compute_step_multiplier(t: float, mode: str) -> float:
     """Compute a strength multiplier from the current diffusion timestep.
 
     In ACE-Step's rectified-flow sampling the timestep runs from ~1.0
     (pure noise, first step) down to ~0.0 (clean output, last step).
 
     Args:
-        t:       Current normalised timestep, clamped internally to [0, 1].
-        mode:    One of:
-                 "none"             — always 1.0 (no step-based scaling).
-                 "fade_out"         — linear 1.0 → 0.0  (strong early, gone by end).
-                 "fade_in"          — linear 0.0 → 1.0  (absent early, full by end).
-                 "cosine_fade_out"  — smooth cosine 1.0 → 0.0.
-                 "cosine_fade_in"   — smooth cosine 0.0 → 1.0.
-                 "cosine_bell"      — 0 → peak at midpoint → 0  (sin envelope).
-        end_pct: Percentage (0–100] of total sampling progress over which the
-                 curve completes. Default 100.0 reproduces the original
-                 behaviour (curve spans the full run). Values below 100
-                 compress the curve into the first end_pct% of progress and
-                 hold the curve's terminal value (0.0 for *_fade_out, 1.0 for
-                 *_fade_in, 0.0 for cosine_bell) for the remainder of
-                 sampling — e.g. end_pct=70 makes cosine_fade_out reach 0 by
-                 70% progress and stay at 0 from there on.
+        t:    Current normalised timestep, clamped internally to [0, 1].
+        mode: One of:
+              "none"             — always 1.0 (no step-based scaling).
+              "fade_out"         — linear 1.0 → 0.0  (strong early, gone by end).
+              "fade_in"          — linear 0.0 → 1.0  (absent early, full by end).
+              "cosine_fade_out"  — smooth cosine 1.0 → 0.0.
+              "cosine_fade_in"   — smooth cosine 0.0 → 1.0.
+              "cosine_bell"      — 0 → peak at midpoint → 0  (sin envelope).
 
     Returns:
         Scalar in [0, 1] to multiply against the base injection strength.
@@ -130,22 +122,16 @@ def compute_step_multiplier(t: float, mode: str, end_pct: float = 100.0) -> floa
 
     if mode == "none":
         return 1.0
-
-    # Compress progress into [0, 1] over the end_pct window, then hold the
-    # curve's terminal value for any progress beyond that window.
-    cutoff = max(0.0001, min(1.0, end_pct / 100.0))
-    scaled = min(1.0, progress / cutoff)
-
-    if mode == "fade_out":
-        return 1.0 - scaled                                  # 1 → 0
+    elif mode == "fade_out":
+        return t                                            # 1 → 0
     elif mode == "fade_in":
-        return scaled                                        # 0 → 1
+        return progress                                     # 0 → 1
     elif mode == "cosine_fade_out":
-        return (1.0 + math.cos(scaled * math.pi)) / 2.0      # smooth 1 → 0
+        return (1.0 + math.cos(progress * math.pi)) / 2.0  # smooth 1 → 0
     elif mode == "cosine_fade_in":
-        return (1.0 - math.cos(scaled * math.pi)) / 2.0      # smooth 0 → 1
+        return (1.0 - math.cos(progress * math.pi)) / 2.0  # smooth 0 → 1
     elif mode == "cosine_bell":
-        return math.sin(scaled * math.pi)                     # 0 → 1 → 0 (compressed)
+        return math.sin(progress * math.pi)                 # 0 → 1 → 0
     else:
         return 1.0
 
