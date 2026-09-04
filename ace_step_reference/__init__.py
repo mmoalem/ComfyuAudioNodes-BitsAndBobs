@@ -8,6 +8,10 @@ from .nodes.per_step_inject_per_layer_step_limited import PerStepSelfAttentionIn
 from .nodes.per_step_cross_attn_inject_per_layer import PerStepCrossAttentionInjectPerLayer
 from .nodes.inspector import ReferenceInspector
 from .nodes.debug_inject import DebugPerStepSAInject
+from .nodes.per_step_self_attn_inject_legacy import PerStepSelfAttentionInjectLegacy
+from .nodes.per_step_self_attn_inject_legacy2 import PerStepSelfAttentionInjectLegacy2
+from .nodes.per_step_self_attn_inject_legacy2_step_limited import PerStepSelfAttentionInjectLegacy2StepLimited
+
 
 NODE_CLASS_MAPPINGS = {
     "AudioTimbreEncode": AudioTimbreEncode,
@@ -20,6 +24,10 @@ NODE_CLASS_MAPPINGS = {
     "PerStepCrossAttentionInjectPerLayer": PerStepCrossAttentionInjectPerLayer,
     "ReferenceInspector": ReferenceInspector,
     "DebugPerStepSAInject": DebugPerStepSAInject,
+    "PerStepSelfAttentionInjectLegacy": PerStepSelfAttentionInjectLegacy,
+    "PerStepSelfAttentionInjectLegacy2": PerStepSelfAttentionInjectLegacy2,
+    "PerStepSelfAttentionInjectLegacy2StepLimited": PerStepSelfAttentionInjectLegacy2StepLimited,
+
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -32,7 +40,12 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "PerStepSelfAttentionInjectPerLayerStepLimited": "Per-Step Self-Attention Inject (Per Layer, Step Limited)",
     "PerStepCrossAttentionInjectPerLayer": "Per-Step Cross-Attention Inject (Per Layer)",
     "ReferenceInspector": "Reference Inspector",
+    "PerStepSelfAttentionInjectLegacy": "Per Step Self Attention Inject (Legacy - pre per-layer)",
+    "PerStepSelfAttentionInjectLegacy2": "Per Step Self Attention Inject (Legacy 2 - step+time taper)",
+    "PerStepSelfAttentionInjectLegacy2StepLimited": "Per Step Self Attention Inject (step+time taper, step limited)",
 }
+
+
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
 
