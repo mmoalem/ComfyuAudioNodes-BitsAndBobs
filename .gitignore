@@ -12,3 +12,4 @@ venv.bak/
 .vscode/
 *.swp
 *.swo
+.pytest_cache/

@@ -712,8 +712,30 @@ class DoraLoraRowWidget {
   }
 
   async openLoraPicker(event) {
-    const loras = await fetchLoras();
+    const allLoras = await fetchLoras();
     closeActiveLoraPicker();
+
+    let subfolder = String(this.parentNode?._doraGlobals?.lora_subfolder ?? "").trim();
+    subfolder = subfolder.replace(/\\/g, "/");
+    const lorasIdx = subfolder.toLowerCase().lastIndexOf("/loras/");
+    if (lorasIdx !== -1) {
+      subfolder = subfolder.slice(lorasIdx + 7);
+    }
+    subfolder = subfolder.replace(/^\/+|\/+$/g, "");
+    const subfolderLower = subfolder.toLowerCase();
+
+    const loras = subfolderLower
+      ? allLoras.filter((n) => {
+          if (n === "None") return true;
+          const normN = String(n).replace(/\\/g, "/").toLowerCase();
+          return (
+            normN.startsWith(subfolderLower + "/") ||
+            normN.startsWith(subfolderLower) ||
+            normN.includes("/" + subfolderLower + "/") ||
+            normN.includes("/" + subfolderLower)
+          );
+        })
+      : allLoras;
 
     const picker = document.createElement("div");
     picker.style.position = "fixed";
@@ -1373,6 +1395,18 @@ function buildUI(node, state, loraValues) {
     rebuild(node);
   });
   wRefresh.serialize = false;
+
+  const wSubfolder = node.addWidget(
+    "text",
+    "lora_subfolder",
+    node._doraGlobals.lora_subfolder ?? "",
+    (v) => {
+      node._doraGlobals.lora_subfolder = String(v ?? "").trim();
+      persistNodeState(node);
+    }
+  );
+  wSubfolder.label = "LoRA subfolder filter";
+  wSubfolder.tooltip = "Type a subfolder name (e.g. 'ace_step') to restrict the picker to that folder. Leave empty to show all LoRAs.";
 
   node._doraRows.forEach((row, i) => {
     const widget = new DoraLoraRowWidget(`LORA_${i + 1}`, node, row);
