@@ -44,6 +44,29 @@ A custom GGUF and PyTorch bypass loader specifically designed for running quanti
 - Re-maps the GGUF `qwen3` embedding namespace back into HuggingFace format for ComfyUI detection.
 - Includes a direct subclass wrapper for the `AudioOobleckVAE` architecture to fix cross-device dtype crashes and apply missing 48kHz to 44.1kHz resampling when used with ACE-Step 1.5.
 
+### [yue2_abc_manipulator](./yue2_abc_manipulator)
+An all-in-one ABC score manipulator node for YuE2 audio generation workflows.
+- **Mode Selection:**
+  - `bypass`: Passes the ABC notation through untouched.
+  - `instrumentalize`: Moves Vocal melodies into resting Ins (instrumental) measures and mutes the Vocal notes.
+  - `vocalize`: Moves Ins melodies into resting Vocal measures using clean, minimal key-signature-aware accidentals and mutes the Ins notes.
+- **BPM Adjustment:** Updates the score's declared tempo (`Q:` field) to a target BPM or leaves it unchanged.
+- **Time Signature Modification:** Updates meter declarations (`M:` field) to common signatures (`2/4`, `3/4`, `4/4`, `5/4`, `6/4`, `6/8`, `7/8`) or leaves them unchanged.
+- **Pitch Transposition:** Chromatically transposes notes up or down by up to two octaves (±24 semitones). Accurately handles octave wrapping across ABC register boundaries (uppercase/lowercase/octave marks) while preserving ties, rests, chord labels, and comments.
+- **Fully Self-Contained:** Zero external dependencies outside the package.
+
+### [yue2_lora_loader](./yue2_lora_loader)
+A dedicated multi-adapter loader for YuE2 models, built on the Power-LoRA architecture.
+- Supports **LoRA**, **DoRA**, **LoKr**, and **LoHa** adapter formats.
+- Correctly targets both the AR/NAR diffusion transformer (`diffusion_model.model.layers.*`) and the Qwen2 text encoder (`text_encoders.model.layers.*`).
+- Features a frontend picker UI with subfolder filtering to easily locate and stack multiple YuE2 adapters.
+
+### [yue2_reference](./yue2_reference)
+A suite of reference audio injection and style transfer nodes designed for the YuE2-3B architecture (28 transformer layers, 48kHz AudioOobleckVAE).
+- **YuE2 Self-Attention Capture & Inject:** Captures self-attention Key/Value activations from an encoded reference audio latent at a designated noise threshold and injects them into the generation pass across selected layer ranges.
+- **YuE2 Per-Step SA Inject (Per Layer):** Performs real-time reference forward passes at each sampling step with granular per-layer strength sliders (layers 0–27), support for `inject`, `replace`, and `threshold` modes, and layer taper options (`linear`, `cosine`).
+- **YuE2 Per-Step SA Inject (step+time taper, step limited):** Applies unified injection strength across layers with customizable step taper curves (`fade_out`, `cosine_fade_out`, `cosine_bell`), time-based weighting, and step cutoffs to fade out reference guidance after a set step threshold.
+
 ## Installation
 
 ### Method 1: ComfyUI-Manager (Recommended)
