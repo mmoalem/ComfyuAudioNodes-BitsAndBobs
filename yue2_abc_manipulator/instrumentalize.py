@@ -205,7 +205,16 @@ def _parse(abc):
         offset += len(line)
     for name, voice in voices.items():
         if voice.events:
-            raise ValueError(f'{name}: end the final measure with a barline.')
+            if len(voice.events) == 1 and voice.events[0].kind == 'multi':
+                multi = voice.events[0]
+                for _ in range(int(multi.text[1:] or 1)):
+                    voice.bars.append(Bar([multi], voice.meter, voice.unit, voice.key, True))
+            else:
+                voice.bars.append(Bar(voice.events, voice.meter, voice.unit, voice.bar_key))
+            voice.events = []
+            voice.elapsed = Fraction(0)
+            voice.accidentals = {}
+            voice.bar_key = None
         if voice.pending_tie:
             raise ValueError(f'{name}: unresolved final tie.')
     vocal, ins = voices['Vocal'].bars, voices['Ins'].bars
